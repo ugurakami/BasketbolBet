@@ -2,14 +2,14 @@
 Basketball Betting Analytics System
 Author: AI Assistant
 Description: Machine learning system for basketball match predictions and betting value detection
-Version: 1.0
+Version: 2.0 - Fixed Date Analysis
 """
 
 import pandas as pd
 import numpy as np
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 from sklearn.preprocessing import LabelEncoder
@@ -20,7 +20,7 @@ warnings.filterwarnings('ignore')
 #                         CONFIGURATION
 # =================================================================
 
-# Data Settings - DOSYA ADI GÜNCELLENDİ
+# Data Settings
 FILE_NAME = "BasketbolFikstür - Sayfa1.tsv"
 
 # Model Settings
@@ -58,9 +58,17 @@ def fractional_kelly_bet_size(full_kelly_percentage, fraction=KELLY_FRACTION, ma
 
 def send_telegram_message(df_bets, analysis_date):
     """Send analysis results via Telegram"""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Telegram credentials not configured. Skipping message.")
+    print(f"📱 Preparing Telegram message for {analysis_date}...")
+    
+    if not TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN == "":
+        print("❌ TELEGRAM_BOT_TOKEN not configured")
         return
+        
+    if not TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID == "":
+        print("❌ TELEGRAM_CHAT_ID not configured")
+        return
+
+    print("✅ Telegram credentials found, sending message...")
 
     if df_bets.empty:
         message = f"🏀 *Basketball Betting Analysis - {analysis_date}*\n\n"
@@ -83,9 +91,10 @@ def send_telegram_message(df_bets, analysis_date):
     }
     
     try:
+        print("🔄 Sending request to Telegram API...")
         response = requests.post(TELEGRAM_API_URL, data=payload, timeout=10)
         response.raise_for_status()
-        print("✅ Telegram message sent successfully")
+        print("✅ Telegram message sent successfully!")
     except requests.exceptions.RequestException as e:
         print(f"❌ Telegram error: {e}")
 
@@ -262,6 +271,84 @@ def find_valuable_bets(predictions_df, odds, min_probability):
     return pd.DataFrame(valuable_bets)
 
 # =================================================================
+#                         DATE ANALYSIS FUNCTIONS
+# =================================================================
+
+def check_data_quality(df):
+    """Veri kalitesini kontrol et"""
+    print(f"\n🔍 DATA QUALITY CHECK:")
+    print(f"Total matches: {len(df)}")
+    print(f"Played matches (with scores): {len(df[df['Home_Score'].notna()])}")
+    print(f"Future matches (to predict): {len(df[df['Home_Score'].isna()])}")
+    
+    # Tarih aralıkları
+    played_dates = df[df['Home_Score'].notna()]['Date']
+    future_dates = df[df['Home_Score'].isna()]['Date']
+    
+    if not played_dates.empty:
+        print(f"Played matches date range: {played_dates.min().date()} to {played_dates.max().date()}")
+    
+    if not future_dates.empty:
+        print(f"Future matches date range: {future_dates.min().date()} to {future_dates.max().date()}")
+        
+        # Bu haftaki maç sayısı
+        current_date = datetime.now().date()
+        next_week = current_date + timedelta(days=7)
+        this_week_matches = df[
+            (df['Home_Score'].isna()) & 
+            (df['Date'].dt.date >= current_date) & 
+            (df['Date'].dt.date <= next_week)
+        ]
+        print(f"Matches this week: {len(this_week_matches)}")
+
+def analyze_future_matches(future_data):
+    """Gelecek maçları analiz et ve detaylı bilgi ver"""
+    current_date = datetime.now().date()
+    future_matches = future_data[future_data['Date'].dt.date >= current_date]
+    
+    print(f"\n📊 FUTURE MATCHES ANALYSIS:")
+    print(f"Current date: {current_date}")
+    print(f"Total future matches: {len(future_matches)}")
+    
+    if future_matches.empty:
+        print("❌ No future matches found!")
+        return None
+    
+    # Tarihlere göre grupla
+    date_groups = future_matches.groupby(future_matches['Date'].dt.date)
+    
+    print(f"\n📅 Match distribution:")
+    for date, matches in date_groups:
+        days_diff = (date - current_date).days
+        status = "TODAY" if days_diff == 0 else f"+{days_diff} days"
+        print(f"   {date}: {len(matches)} matches ({status})")
+        
+        # İlk 3 maçı göster
+        for i, (_, match) in enumerate(matches.head(3).iterrows()):
+            print(f"      {match['Home_Team']} vs {match['Away_Team']}")
+    
+    # Önerilen analiz tarihini bul (en yakın tarih)
+    recommended_date = future_matches['Date'].min().date()
+    print(f"\n🎯 Recommended analysis date: {recommended_date}")
+    
+    return recommended_date
+
+def get_this_weeks_matches(future_data, days_ahead=7):
+    """Önümüzdeki günlerdeki maçları bul"""
+    current_date = datetime.now().date()
+    start_date = current_date
+    end_date = current_date + timedelta(days=days_ahead)
+    
+    print(f"🔍 Looking for matches from {start_date} to {end_date}")
+    
+    this_weeks_matches = future_data[
+        (future_data['Date'].dt.date >= start_date) & 
+        (future_data['Date'].dt.date <= end_date)
+    ].copy()
+    
+    return this_weeks_matches
+
+# =================================================================
 #                         MAIN PIPELINE
 # =================================================================
 
@@ -290,8 +377,7 @@ def load_and_clean_data(file_path):
     df['Home_Score'] = pd.to_numeric(df['Home_Score'], errors='coerce')
     df['Away_Score'] = pd.to_numeric(df['Away_Score'], errors='coerce')
     
-    # ESKİ: df['Date'] = pd.to_datetime(df['Date'], format='%d.%m.%Y')
-    # YENİ: Daha esnek tarih parsing'i
+    # Esnek tarih parsing'i
     print("🔄 Converting dates...")
     df['Date'] = pd.to_datetime(df['Date'], format='%d.%m.%Y', errors='coerce')
     
@@ -299,10 +385,6 @@ def load_and_clean_data(file_path):
     invalid_dates = df['Date'].isna().sum()
     if invalid_dates > 0:
         print(f"⚠️  Found {invalid_dates} invalid dates. They will be filtered out.")
-        # Geçersiz tarihleri göster
-        invalid_rows = df[df['Date'].isna()]
-        print("Invalid date examples:")
-        print(invalid_rows[['Date']].head())
     
     # Geçersiz tarihleri filtrele
     df = df[df['Date'].notna()].copy()
@@ -340,7 +422,7 @@ def prepare_model_data(df, n_matches):
     else:
         future_features = pd.DataFrame()
     
-    # Define feature columns - League sütunu eklendi
+    # Define feature columns
     feature_columns = [
         'Rest_Days_Diff', 'Home_Team_Home_Form', 'Away_Team_Away_Form', 
         'H2H_Record', 'Home_Team', 'Away_Team', 'League'
@@ -416,6 +498,9 @@ def main():
     if df is None:
         return
     
+    # Data quality check
+    check_data_quality(df)
+    
     # Prepare model data
     model_data = prepare_model_data(df, RECENT_MATCHES_COUNT)
     if model_data[0] is None:
@@ -426,6 +511,11 @@ def main():
     # Check if we have data for prediction
     if X_predict.empty:
         print("ℹ️  No upcoming matches to predict")
+        return
+    
+    # Analyze future matches
+    recommended_date = analyze_future_matches(future_data)
+    if not recommended_date:
         return
     
     # Train models
@@ -439,17 +529,33 @@ def main():
     
     # Prepare predictions dataframe
     future_data = future_data.loc[X_predict.index].copy()
-    future_data['P_Home'] = side_proba[:, 1]  # Home win probability
-    future_data['P_Away'] = side_proba[:, 0]  # Away win probability  
-    future_data['P_Over'] = over_proba[:, 1]  # Over probability
-    future_data['P_Under'] = over_proba[:, 0]  # Under probability
+    future_data['P_Home'] = side_proba[:, 1]
+    future_data['P_Away'] = side_proba[:, 0]
+    future_data['P_Over'] = over_proba[:, 1]
+    future_data['P_Under'] = over_proba[:, 0]
     future_data['Limit_Line'] = limit_line
     
-    # Find today's matches
-    today = future_data['Date'].min()
-    todays_matches = future_data[future_data['Date'] == today].copy()
+    # Bu haftaki maçları bul
+    this_weeks_matches = get_this_weeks_matches(future_data)
     
-    print(f"\n📅 Analysis Date: {today.strftime('%Y-%m-%d')}")
+    if this_weeks_matches.empty:
+        print("❌ No matches found for this week")
+        # Tüm gelecek maçları göster
+        all_future = future_data[future_data['Date'].dt.date >= datetime.now().date()]
+        if not all_future.empty:
+            print("📅 All future matches:")
+            date_summary = all_future.groupby(all_future['Date'].dt.date).size()
+            for date, count in date_summary.items():
+                days_away = (date - datetime.now().date()).days
+                print(f"   {date}: {count} matches ({days_away} days away)")
+        return
+    
+    # İlk günün maçlarını al (genellikle en yakın tarih)
+    analysis_date = this_weeks_matches['Date'].min().date()
+    todays_matches = this_weeks_matches[this_weeks_matches['Date'].dt.date == analysis_date].copy()
+    
+    print(f"\n📅 Analysis Date: {analysis_date}")
+    print(f"📊 Matches to analyze: {len(todays_matches)}")
     print(f"📊 Total Score Limit Line: {limit_line:.1f}")
     print(f"🎯 Minimum Probability Threshold: {MIN_PROBABILITY_THRESHOLD}")
     
@@ -463,7 +569,7 @@ def main():
         print("\n" + valuable_bets.to_string(index=False))
     
     # Send Telegram notification
-    send_telegram_message(valuable_bets, today.strftime('%Y-%m-%d'))
+    send_telegram_message(valuable_bets, analysis_date)
     
     print("\n🎯 Analysis complete!")
 
