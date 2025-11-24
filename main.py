@@ -235,28 +235,20 @@ while True:
     print("1. Tüm ligleri göster")
     print("2. Belirli bir lig raporu")
     print("3. Takım detayları")
-    print("4. Çıkış")
-    
-    secim = input("\nSeçiminiz (1-4): ").strip()
+    print("4. Telegram Raporları")  # ✨ YENİ
+    print("5. Çıkış")
+
+    secim = input("\nSeçiminiz (1-5): ").strip()
     
     if secim == '1':
         lig_analizi(df)
     elif secim == '2':
-        print(f"\nMevcut ligler: {', '.join(df['Lig'].unique())}")
-        lig_sec = input("Lig adını girin: ").strip()
-        if lig_sec in df['Lig'].unique():
-            detayli_lig_raporu(lig_sec)
-        else:
-            print("❌ Geçersiz lig adı!")
+        # ... mevcut kod
     elif secim == '3':
-        takim_sec = input("Takım adını girin: ").strip()
-        team_matches = df[(df['Ev Sahibi'] == takim_sec) | (df['Deplasman'] == takim_sec)]
-        if len(team_matches) > 0:
-            print(f"\n{takim_sec} takımının maçları:")
-            print(team_matches[['Tarih', 'Lig', 'Ev Sahibi', 'MS(Ev)', 'MS(Dep)', 'Deplasman']].to_string(index=False))
-        else:
-            print("❌ Takım bulunamadı!")
-    elif secim == '4':
+        # ... mevcut kod
+    elif secim == '4':  # ✨ TELEGRAM SEÇENEĞİ
+        telegram_menu_ekle(df)
+    elif secim == '5':
         print("👋 Program sonlandırıldı!")
         break
     else:
@@ -268,3 +260,19 @@ print(f"📊 Toplam işlenen satır: {len(df)}")
 print(f"🏆 Analiz edilen lig sayısı: {len(df['Lig'].unique())}")
 print(f"📅 Veri aralığı: {df['Tarih'].min().strftime('%d.%m.%Y')} - {df['Tarih'].max().strftime('%d.%m.%Y')}")
 print(f"👋 Teşekkürler!")
+
+🏀 Eurolig Günlük Özet
+══════════════════════════════════
+
+📊 Genel Bilgiler
+• Maç Sayısı: 8
+• Ort. Skor: 168.5
+• Ort. Fark: 12.3
+
+🔥 Son Maçlar
+✅ 🏠 Fenerbahçe 89-78 Barcelona (20:30)
+❌ ✈️ Real Madrid 95-102 Anadolu Efes (22:15)
+
+🎯 Yüksek Skorlu Maçlar
+• Olympiakos 112-108 AS Monaco (204)
+• Barcelona 98-105 Real Madrid (203)
