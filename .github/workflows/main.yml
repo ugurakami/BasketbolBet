@@ -9,6 +9,9 @@ on:
 jobs:
   tahmin_yap_ve_gonder:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
     
     steps:
       - name: Kodu İndir
