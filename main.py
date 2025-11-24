@@ -2,7 +2,7 @@
 Basketball Betting Analytics System
 Author: AI Assistant
 Description: Machine learning system for basketball match predictions and betting value detection
-Version: 2.0 - Fixed Date Analysis
+Version: 3.1 - Fixed Telegram Issues
 """
 
 import pandas as pd
@@ -25,18 +25,17 @@ FILE_NAME = "BasketbolFikstür - Sayfa1.tsv"
 
 # Model Settings
 DEFAULT_ODDS = 1.90
-MIN_PROBABILITY_THRESHOLD = 0.55
-RECENT_MATCHES_COUNT = 5
+MIN_PROBABILITY_THRESHOLD = 0.60
+RECENT_MATCHES_COUNT = 8
 MIN_ACCURACY_THRESHOLD = 0.55
 
 # Risk Management
-KELLY_FRACTION = 0.25
-MAX_BANKROLL_PERCENTAGE = 1.0
+KELLY_FRACTION = 0.15
+MAX_BANKROLL_PERCENTAGE = 2.0
 
-# Telegram Settings (Set via GitHub Secrets)
+# Telegram Settings
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
-TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
 # =================================================================
 #                         UTILITY FUNCTIONS
@@ -56,34 +55,63 @@ def fractional_kelly_bet_size(full_kelly_percentage, fraction=KELLY_FRACTION, ma
     fractional = full_kelly_percentage * fraction
     return min(fractional, max_percent)
 
-def send_telegram_message(df_bets, analysis_date):
-    """Send analysis results via Telegram"""
+def send_telegram_message(df_bets, analysis_date, limit_line):
+    """Send analysis results via Telegram - FIXED VERSION"""
     print(f"📱 Preparing Telegram message for {analysis_date}...")
+    
+    # Debug information
+    print(f"🔍 Telegram Bot Token: {'Set' if TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_TOKEN != '' else 'Not Set'}")
+    print(f"🔍 Telegram Chat ID: {'Set' if TELEGRAM_CHAT_ID and TELEGRAM_CHAT_ID != '' else 'Not Set'}")
     
     if not TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN == "":
         print("❌ TELEGRAM_BOT_TOKEN not configured")
+        print("💡 Please set TELEGRAM_BOT_TOKEN in GitHub Secrets")
         return
         
     if not TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID == "":
         print("❌ TELEGRAM_CHAT_ID not configured")
+        print("💡 Please set TELEGRAM_CHAT_ID in GitHub Secrets")
         return
 
-    print("✅ Telegram credentials found, sending message...")
+    print("✅ Telegram credentials found, preparing message...")
 
     if df_bets.empty:
         message = f"🏀 *Basketball Betting Analysis - {analysis_date}*\n\n"
-        message += "No valuable bets found today based on Kelly Criterion. 🚫"
+        message += "No valuable bets found today based on Kelly Criterion 🚫\n"
+        message += f"*Limit Line:* {limit_line:.1f}"
     else:
         message = f"💰 *Basketball Betting Recommendations - {analysis_date}*\n\n"
+        message += f"*Limit Line:* {limit_line:.1f}\n\n"
         
-        for _, row in df_bets.iterrows():
-            message += f"• *Match:* {row['Match']}\n"
-            message += f"  - *Bet:* {row['Selection']}\n"
-            message += f"  - *Model Probability:* {row['Model_Probability']:.1%}\n"
-            message += f"  - *Bet Size:* {row['Kelly_Percentage']:.1f}% of bankroll\n"
-            message += f"  - *Odds:* {row['Odds']:.2f}\n"
-            message += "────────────────────\n"
+        # Bahisleri türlerine göre grupla
+        side_bets = df_bets[df_bets['Bet_Type'] == 'Side']
+        over_under_bets = df_bets[df_bets['Bet_Type'] == 'Points Line']
+        
+        if not side_bets.empty:
+            message += "*🎯 SIDE BETS:*\n"
+            for _, row in side_bets.iterrows():
+                message += f"• {row['Match']}\n"
+                message += f"  - {row['Selection']}\n"
+                message += f"  - Model: {row['Model_Probability']:.1%}\n"
+                message += f"  - Bet Size: {row['Kelly_Percentage']:.1f}%\n"
+                message += f"  - Odds: {row['Odds']:.2f}\n"
+                message += "  ────────\n"
+        
+        if not over_under_bets.empty:
+            message += "\n*📊 OVER/UNDER BETS:*\n"
+            for _, row in over_under_bets.iterrows():
+                message += f"• {row['Match']}\n"
+                message += f"  - {row['Selection']}\n"
+                message += f"  - Model: {row['Model_Probability']:.1%}\n"
+                message += f"  - Bet Size: {row['Kelly_Percentage']:.1f}%\n"
+                message += f"  - Odds: {row['Odds']:.2f}\n"
+                message += "  ────────\n"
+        
+        message += f"\n*Total Bets:* {len(df_bets)}"
 
+    # Telegram API URL - FIXED: Do not use f-string with token
+    telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    
     payload = {
         'chat_id': TELEGRAM_CHAT_ID,
         'text': message,
@@ -92,15 +120,29 @@ def send_telegram_message(df_bets, analysis_date):
     
     try:
         print("🔄 Sending request to Telegram API...")
-        response = requests.post(TELEGRAM_API_URL, data=payload, timeout=10)
-        response.raise_for_status()
-        print("✅ Telegram message sent successfully!")
+        print(f"🔍 URL: https://api.telegram.org/bot***/sendMessage")
+        print(f"🔍 Chat ID: {TELEGRAM_CHAT_ID}")
+        print(f"🔍 Message length: {len(message)} characters")
+        
+        response = requests.post(telegram_url, data=payload, timeout=30)
+        
+        print(f"🔍 Response Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            print("✅ Telegram message sent successfully!")
+            result = response.json()
+            if result.get('ok'):
+                print("✅ Message delivered to Telegram")
+            else:
+                print(f"❌ Telegram API error: {result.get('description', 'Unknown error')}")
+        else:
+            print(f"❌ HTTP Error: {response.status_code}")
+            print(f"❌ Response: {response.text}")
+            
     except requests.exceptions.RequestException as e:
-        print(f"❌ Telegram error: {e}")
-
-# =================================================================
-#                         FEATURE ENGINEERING
-# =================================================================
+        print(f"❌ Telegram connection error: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"❌ Response text: {e.response.text}")
 
 def safe_label_encode(train_series, test_series):
     """Safe label encoding with unknown value handling"""
@@ -112,67 +154,103 @@ def safe_label_encode(train_series, test_series):
         if val in le.classes_:
             test_encoded.append(le.transform([val])[0])
         else:
-            test_encoded.append(-1)  # Unknown value
+            test_encoded.append(-1)
             
     return train_encoded, np.array(test_encoded)
 
-def calculate_team_form(team, date, is_home, historical_data, n_matches):
-    """Calculate team form based on recent matches"""
-    if is_home:
-        matches = historical_data[
-            (historical_data['Home_Team'] == team) & 
-            (historical_data['Date'] < date)
-        ].tail(n_matches)
-        wins = (matches['Winning_Side'] == 1).sum()
+def calculate_team_offensive_rating(team, date, historical_data, n_matches):
+    """Calculate team offensive rating based on recent matches"""
+    home_matches = historical_data[
+        (historical_data['Home_Team'] == team) & 
+        (historical_data['Date'] < date)
+    ].tail(n_matches)
+    
+    away_matches = historical_data[
+        (historical_data['Away_Team'] == team) & 
+        (historical_data['Date'] < date)
+    ].tail(n_matches)
+    
+    total_points = home_matches['Home_Score'].sum() + away_matches['Away_Score'].sum()
+    total_matches = len(home_matches) + len(away_matches)
+    
+    return total_points / total_matches if total_matches > 0 else 85.0
+
+def calculate_team_defensive_rating(team, date, historical_data, n_matches):
+    """Calculate team defensive rating based on recent matches"""
+    home_matches = historical_data[
+        (historical_data['Home_Team'] == team) & 
+        (historical_data['Date'] < date)
+    ].tail(n_matches)
+    
+    away_matches = historical_data[
+        (historical_data['Away_Team'] == team) & 
+        (historical_data['Date'] < date)
+    ].tail(n_matches)
+    
+    conceded_points = home_matches['Away_Score'].sum() + away_matches['Home_Score'].sum()
+    total_matches = len(home_matches) + len(away_matches)
+    
+    return conceded_points / total_matches if total_matches > 0 else 85.0
+
+def calculate_team_form(team, date, historical_data, n_matches):
+    """Calculate team form based on recent matches (home + away)"""
+    home_matches = historical_data[
+        (historical_data['Home_Team'] == team) & 
+        (historical_data['Date'] < date)
+    ].tail(n_matches)
+    
+    away_matches = historical_data[
+        (historical_data['Away_Team'] == team) & 
+        (historical_data['Date'] < date)
+    ].tail(n_matches)
+    
+    home_wins = (home_matches['Winning_Side'] == 1).sum()
+    away_wins = (away_matches['Winning_Side'] == 0).sum()
+    total_wins = home_wins + away_wins
+    total_matches = len(home_matches) + len(away_matches)
+    
+    return total_wins / total_matches if total_matches > 0 else 0.5
+
+def calculate_league_limit_line(league, date, historical_data):
+    """Calculate dynamic limit line for each league"""
+    league_matches = historical_data[
+        (historical_data['League'] == league) & 
+        (historical_data['Date'] < date)
+    ].tail(50)
+    
+    if len(league_matches) > 10:
+        return league_matches['Total_Score'].median()
     else:
-        matches = historical_data[
-            (historical_data['Away_Team'] == team) & 
-            (historical_data['Date'] < date)
-        ].tail(n_matches)
-        wins = (matches['Winning_Side'] == 0).sum()
-    
-    return wins / len(matches) if len(matches) > 0 else 0.5
+        return historical_data['Total_Score'].median()
 
-def calculate_h2h_record(home_team, away_team, date, historical_data, n_matches):
-    """Calculate head-to-head record between teams"""
-    h2h_matches = historical_data[
-        ((historical_data['Home_Team'] == home_team) & (historical_data['Away_Team'] == away_team)) |
-        ((historical_data['Home_Team'] == away_team) & (historical_data['Away_Team'] == home_team))
-    ].query('Date < @date').tail(n_matches)
+def calculate_matchup_limit_line(home_team, away_team, date, historical_data):
+    """Calculate limit line based on specific team matchup"""
+    matchup_matches = historical_data[
+        (((historical_data['Home_Team'] == home_team) & (historical_data['Away_Team'] == away_team)) |
+         ((historical_data['Home_Team'] == away_team) & (historical_data['Away_Team'] == home_team))) &
+        (historical_data['Date'] < date)
+    ].tail(10)
     
-    if len(h2h_matches) == 0:
-        return 0.5
-    
-    home_wins = h2h_matches.apply(
-        lambda row: 1 if (
-            (row['Home_Team'] == home_team and row['Winning_Side'] == 1) or
-            (row['Away_Team'] == home_team and row['Winning_Side'] == 0)
-        ) else 0, axis=1
-    ).sum()
-    
-    return home_wins / len(h2h_matches)
-
-def calculate_rest_days(df):
-    """Calculate rest days between matches for each team"""
-    home_matches = df[['Date', 'Home_Team']].rename(columns={'Home_Team': 'Team'})
-    away_matches = df[['Date', 'Away_Team']].rename(columns={'Away_Team': 'Team'})
-    
-    all_matches = pd.concat([home_matches, away_matches]).sort_values('Date').reset_index(drop=True)
-    all_matches['Previous_Date'] = all_matches.groupby('Team')['Date'].shift(1)
-    all_matches['Rest_Days'] = (all_matches['Date'] - all_matches['Previous_Date']).dt.days
-    
-    return all_matches
+    if len(matchup_matches) > 3:
+        return matchup_matches['Total_Score'].median()
+    else:
+        return None
 
 def create_features(df, historical_data, n_matches):
     """Create comprehensive features for model training"""
     df_features = df.copy()
     
     # Rest days calculation
-    rest_days_data = calculate_rest_days(df_features)
+    home_matches = df_features[['Date', 'Home_Team']].rename(columns={'Home_Team': 'Team'})
+    away_matches = df_features[['Date', 'Away_Team']].rename(columns={'Away_Team': 'Team'})
     
-    home_rest = rest_days_data[['Date', 'Team', 'Rest_Days']].rename(
+    all_matches = pd.concat([home_matches, away_matches]).sort_values('Date').reset_index(drop=True)
+    all_matches['Previous_Date'] = all_matches.groupby('Team')['Date'].shift(1)
+    all_matches['Rest_Days'] = (all_matches['Date'] - all_matches['Previous_Date']).dt.days
+    
+    home_rest = all_matches[['Date', 'Team', 'Rest_Days']].rename(
         columns={'Team': 'Home_Team', 'Rest_Days': 'Home_Rest_Days'})
-    away_rest = rest_days_data[['Date', 'Team', 'Rest_Days']].rename(
+    away_rest = all_matches[['Date', 'Team', 'Rest_Days']].rename(
         columns={'Team': 'Away_Team', 'Rest_Days': 'Away_Rest_Days'})
     
     df_features = pd.merge(df_features, home_rest, on=['Date', 'Home_Team'], how='left')
@@ -182,16 +260,39 @@ def create_features(df, historical_data, n_matches):
     df_features['Away_Rest_Days'] = df_features['Away_Rest_Days'].fillna(7)
     df_features['Rest_Days_Diff'] = df_features['Home_Rest_Days'] - df_features['Away_Rest_Days']
     
-    # Team form calculations
-    df_features['Home_Team_Home_Form'] = df_features.apply(
-        lambda row: calculate_team_form(row['Home_Team'], row['Date'], True, historical_data, n_matches), axis=1)
+    # Advanced team ratings
+    df_features['Home_Offensive_Rating'] = df_features.apply(
+        lambda row: calculate_team_offensive_rating(row['Home_Team'], row['Date'], historical_data, n_matches), axis=1)
     
-    df_features['Away_Team_Away_Form'] = df_features.apply(
-        lambda row: calculate_team_form(row['Away_Team'], row['Date'], False, historical_data, n_matches), axis=1)
+    df_features['Away_Offensive_Rating'] = df_features.apply(
+        lambda row: calculate_team_offensive_rating(row['Away_Team'], row['Date'], historical_data, n_matches), axis=1)
     
-    # Head-to-head record
-    df_features['H2H_Record'] = df_features.apply(
-        lambda row: calculate_h2h_record(row['Home_Team'], row['Away_Team'], row['Date'], historical_data, n_matches), axis=1)
+    df_features['Home_Defensive_Rating'] = df_features.apply(
+        lambda row: calculate_team_defensive_rating(row['Home_Team'], row['Date'], historical_data, n_matches), axis=1)
+    
+    df_features['Away_Defensive_Rating'] = df_features.apply(
+        lambda row: calculate_team_defensive_rating(row['Away_Team'], row['Date'], historical_data, n_matches), axis=1)
+    
+    # Team form (combined home + away)
+    df_features['Home_Team_Form'] = df_features.apply(
+        lambda row: calculate_team_form(row['Home_Team'], row['Date'], historical_data, n_matches), axis=1)
+    
+    df_features['Away_Team_Form'] = df_features.apply(
+        lambda row: calculate_team_form(row['Away_Team'], row['Date'], historical_data, n_matches), axis=1)
+    
+    # Expected total score
+    df_features['Expected_Total_Score'] = (
+        df_features['Home_Offensive_Rating'] + df_features['Away_Offensive_Rating']
+    ) / 2
+    
+    # Strength difference
+    df_features['Offensive_Strength_Diff'] = (
+        df_features['Home_Offensive_Rating'] - df_features['Away_Offensive_Rating']
+    )
+    
+    df_features['Defensive_Strength_Diff'] = (
+        df_features['Home_Defensive_Rating'] - df_features['Away_Defensive_Rating']
+    )
     
     return df_features
 
@@ -199,21 +300,32 @@ def create_features(df, historical_data, n_matches):
 #                         BET ANALYSIS
 # =================================================================
 
-def find_valuable_bets(predictions_df, odds, min_probability):
-    """Identify valuable bets using Kelly Criterion"""
+def find_valuable_bets(predictions_df, min_probability):
+    """Identify valuable bets using Kelly Criterion with dynamic odds"""
     valuable_bets = []
-    net_odds = odds - 1
     
     for _, match in predictions_df.iterrows():
         match_name = f"{match['Home_Team']} vs {match['Away_Team']}"
         limit_line = int(match['Limit_Line'])
         
+        # Dynamic odds based on probability
+        def get_dynamic_odds(probability):
+            if probability > 0.75:
+                return 1.60
+            elif probability > 0.65:
+                return 1.75
+            elif probability > 0.55:
+                return 1.85
+            else:
+                return 1.95
+        
         # Home win bet
         if match['P_Home'] > min_probability:
+            odds = get_dynamic_odds(match['P_Home'])
             kelly_full = calculate_kelly_criterion(match['P_Home'], odds)
             kelly_fractional = fractional_kelly_bet_size(kelly_full)
             
-            if kelly_fractional > 0.01:  # Minimum bet size threshold
+            if kelly_fractional > 0.005:
                 valuable_bets.append({
                     'Match': match_name,
                     'Bet_Type': 'Side',
@@ -225,10 +337,11 @@ def find_valuable_bets(predictions_df, odds, min_probability):
         
         # Away win bet
         if match['P_Away'] > min_probability:
+            odds = get_dynamic_odds(match['P_Away'])
             kelly_full = calculate_kelly_criterion(match['P_Away'], odds)
             kelly_fractional = fractional_kelly_bet_size(kelly_full)
             
-            if kelly_fractional > 0.01:
+            if kelly_fractional > 0.005:
                 valuable_bets.append({
                     'Match': match_name,
                     'Bet_Type': 'Side',
@@ -240,10 +353,11 @@ def find_valuable_bets(predictions_df, odds, min_probability):
         
         # Over bet
         if match['P_Over'] > min_probability:
+            odds = get_dynamic_odds(match['P_Over'])
             kelly_full = calculate_kelly_criterion(match['P_Over'], odds)
             kelly_fractional = fractional_kelly_bet_size(kelly_full)
             
-            if kelly_fractional > 0.01:
+            if kelly_fractional > 0.005:
                 valuable_bets.append({
                     'Match': match_name,
                     'Bet_Type': 'Points Line',
@@ -255,10 +369,11 @@ def find_valuable_bets(predictions_df, odds, min_probability):
         
         # Under bet
         if match['P_Under'] > min_probability:
+            odds = get_dynamic_odds(match['P_Under'])
             kelly_full = calculate_kelly_criterion(match['P_Under'], odds)
             kelly_fractional = fractional_kelly_bet_size(kelly_full)
             
-            if kelly_fractional > 0.01:
+            if kelly_fractional > 0.005:
                 valuable_bets.append({
                     'Match': match_name,
                     'Bet_Type': 'Points Line',
@@ -271,89 +386,11 @@ def find_valuable_bets(predictions_df, odds, min_probability):
     return pd.DataFrame(valuable_bets)
 
 # =================================================================
-#                         DATE ANALYSIS FUNCTIONS
-# =================================================================
-
-def check_data_quality(df):
-    """Veri kalitesini kontrol et"""
-    print(f"\n🔍 DATA QUALITY CHECK:")
-    print(f"Total matches: {len(df)}")
-    print(f"Played matches (with scores): {len(df[df['Home_Score'].notna()])}")
-    print(f"Future matches (to predict): {len(df[df['Home_Score'].isna()])}")
-    
-    # Tarih aralıkları
-    played_dates = df[df['Home_Score'].notna()]['Date']
-    future_dates = df[df['Home_Score'].isna()]['Date']
-    
-    if not played_dates.empty:
-        print(f"Played matches date range: {played_dates.min().date()} to {played_dates.max().date()}")
-    
-    if not future_dates.empty:
-        print(f"Future matches date range: {future_dates.min().date()} to {future_dates.max().date()}")
-        
-        # Bu haftaki maç sayısı
-        current_date = datetime.now().date()
-        next_week = current_date + timedelta(days=7)
-        this_week_matches = df[
-            (df['Home_Score'].isna()) & 
-            (df['Date'].dt.date >= current_date) & 
-            (df['Date'].dt.date <= next_week)
-        ]
-        print(f"Matches this week: {len(this_week_matches)}")
-
-def analyze_future_matches(future_data):
-    """Gelecek maçları analiz et ve detaylı bilgi ver"""
-    current_date = datetime.now().date()
-    future_matches = future_data[future_data['Date'].dt.date >= current_date]
-    
-    print(f"\n📊 FUTURE MATCHES ANALYSIS:")
-    print(f"Current date: {current_date}")
-    print(f"Total future matches: {len(future_matches)}")
-    
-    if future_matches.empty:
-        print("❌ No future matches found!")
-        return None
-    
-    # Tarihlere göre grupla
-    date_groups = future_matches.groupby(future_matches['Date'].dt.date)
-    
-    print(f"\n📅 Match distribution:")
-    for date, matches in date_groups:
-        days_diff = (date - current_date).days
-        status = "TODAY" if days_diff == 0 else f"+{days_diff} days"
-        print(f"   {date}: {len(matches)} matches ({status})")
-        
-        # İlk 3 maçı göster
-        for i, (_, match) in enumerate(matches.head(3).iterrows()):
-            print(f"      {match['Home_Team']} vs {match['Away_Team']}")
-    
-    # Önerilen analiz tarihini bul (en yakın tarih)
-    recommended_date = future_matches['Date'].min().date()
-    print(f"\n🎯 Recommended analysis date: {recommended_date}")
-    
-    return recommended_date
-
-def get_this_weeks_matches(future_data, days_ahead=7):
-    """Önümüzdeki günlerdeki maçları bul"""
-    current_date = datetime.now().date()
-    start_date = current_date
-    end_date = current_date + timedelta(days=days_ahead)
-    
-    print(f"🔍 Looking for matches from {start_date} to {end_date}")
-    
-    this_weeks_matches = future_data[
-        (future_data['Date'].dt.date >= start_date) & 
-        (future_data['Date'].dt.date <= end_date)
-    ].copy()
-    
-    return this_weeks_matches
-
-# =================================================================
 #                         MAIN PIPELINE
 # =================================================================
 
 def load_and_clean_data(file_path):
-    """Load and clean basketball data - ORJİNAL SÜTUN İSİMLERİYLE"""
+    """Load and clean basketball data"""
     try:
         df = pd.read_csv(file_path, sep='\t')
         print(f"✅ Data loaded successfully: {len(df)} records")
@@ -361,7 +398,7 @@ def load_and_clean_data(file_path):
         print(f"❌ Error: File '{file_path}' not found")
         return None
     
-    # Orijinal sütun isimlerini koruyarak temizleme
+    # Column renaming and cleaning
     df = df.rename(columns={
         'MS(Ev)': 'Home_Score',
         'MS(Dep)': 'Away_Score', 
@@ -377,18 +414,16 @@ def load_and_clean_data(file_path):
     df['Home_Score'] = pd.to_numeric(df['Home_Score'], errors='coerce')
     df['Away_Score'] = pd.to_numeric(df['Away_Score'], errors='coerce')
     
-    # Esnek tarih parsing'i
+    # Date parsing
     print("🔄 Converting dates...")
     df['Date'] = pd.to_datetime(df['Date'], format='%d.%m.%Y', errors='coerce')
     
-    # Geçersiz tarihleri kontrol et
+    # Filter invalid dates
     invalid_dates = df['Date'].isna().sum()
     if invalid_dates > 0:
-        print(f"⚠️  Found {invalid_dates} invalid dates. They will be filtered out.")
+        print(f"⚠️  Filtered out {invalid_dates} invalid dates")
     
-    # Geçersiz tarihleri filtrele
     df = df[df['Date'].notna()].copy()
-    
     df = df.sort_values('Date').reset_index(drop=True)
     
     # Create target variables
@@ -396,7 +431,13 @@ def load_and_clean_data(file_path):
     df['Winning_Side'] = (df['Home_Score'] > df['Away_Score']).astype('float')
     df['Winning_Side'] = df['Winning_Side'].where(df['Home_Score'].notna(), -1)
     
+    # Create Over/Under target
+    overall_limit = df[df['Home_Score'].notna()]['Total_Score'].median()
+    df['Over_Line'] = (df['Total_Score'] > overall_limit).astype('float')
+    df['Over_Line'] = df['Over_Line'].where(df['Home_Score'].notna(), -1)
+    
     print(f"✅ Final dataset: {len(df)} valid records")
+    print(f"📊 Overall Limit Line: {overall_limit:.1f}")
     return df
 
 def prepare_model_data(df, n_matches):
@@ -407,11 +448,7 @@ def prepare_model_data(df, n_matches):
     
     if historical_data.empty:
         print("❌ No historical data for training")
-        return None, None, None, None, None, None
-    
-    # Calculate limit line from historical data only
-    limit_line = historical_data['Total_Score'].median()
-    historical_data['Over_Line'] = (historical_data['Total_Score'] > limit_line).astype('float')
+        return None, None, None, None, None
     
     # Create features
     print("🔄 Creating features...")
@@ -419,13 +456,22 @@ def prepare_model_data(df, n_matches):
     
     if not future_data.empty:
         future_features = create_features(future_data, historical_data, n_matches)
+        
+        # Calculate dynamic limit lines for each match
+        future_features['Limit_Line'] = future_features.apply(
+            lambda row: calculate_matchup_limit_line(
+                row['Home_Team'], row['Away_Team'], row['Date'], historical_data
+            ) or calculate_league_limit_line(row['League'], row['Date'], historical_data), axis=1)
     else:
         future_features = pd.DataFrame()
     
     # Define feature columns
     feature_columns = [
-        'Rest_Days_Diff', 'Home_Team_Home_Form', 'Away_Team_Away_Form', 
-        'H2H_Record', 'Home_Team', 'Away_Team', 'League'
+        'Rest_Days_Diff', 'Home_Team_Form', 'Away_Team_Form', 
+        'Home_Offensive_Rating', 'Away_Offensive_Rating',
+        'Home_Defensive_Rating', 'Away_Defensive_Rating',
+        'Expected_Total_Score', 'Offensive_Strength_Diff', 'Defensive_Strength_Diff',
+        'Home_Team', 'Away_Team', 'League'
     ]
     
     # Prepare training data
@@ -434,7 +480,7 @@ def prepare_model_data(df, n_matches):
     
     if X_train.empty:
         print("❌ No valid training data after preprocessing")
-        return None, None, None, None, None, None
+        return None, None, None, None, None
     
     # Prepare prediction data
     if not future_features.empty:
@@ -455,7 +501,7 @@ def prepare_model_data(df, n_matches):
     y_side = historical_features.loc[X_train.index, 'Winning_Side']
     y_over = historical_features.loc[X_train.index, 'Over_Line']
     
-    return X_train, X_predict, y_side, y_over, limit_line, future_features
+    return X_train, X_predict, y_side, y_over, future_features
 
 def train_and_evaluate_models(X_train, y_side, y_over):
     """Train and evaluate machine learning models"""
@@ -490,86 +536,88 @@ def train_and_evaluate_models(X_train, y_side, y_over):
 
 def main():
     """Main execution function"""
-    print("🏀 Basketball Betting Analytics System")
-    print("=" * 50)
+    print("🏀 Basketball Betting Analytics System - Fixed Telegram")
+    print("=" * 60)
+    
+    # Debug Telegram settings
+    print(f"🔍 Telegram Bot Token: {'***' + TELEGRAM_BOT_TOKEN[-4:] if TELEGRAM_BOT_TOKEN else 'Not Set'}")
+    print(f"🔍 Telegram Chat ID: {TELEGRAM_CHAT_ID if TELEGRAM_CHAT_ID else 'Not Set'}")
     
     # Load data
     df = load_and_clean_data(FILE_NAME)
     if df is None:
         return
     
-    # Data quality check
-    check_data_quality(df)
-    
     # Prepare model data
     model_data = prepare_model_data(df, RECENT_MATCHES_COUNT)
     if model_data[0] is None:
         return
         
-    X_train, X_predict, y_side, y_over, limit_line, future_data = model_data
+    X_train, X_predict, y_side, y_over, future_data = model_data
     
     # Check if we have data for prediction
     if X_predict.empty:
         print("ℹ️  No upcoming matches to predict")
         return
     
-    # Analyze future matches
-    recommended_date = analyze_future_matches(future_data)
-    if not recommended_date:
+    # Get this week's matches only
+    current_date = datetime.now().date()
+    next_week = current_date + timedelta(days=7)
+    this_weeks_matches = future_data[
+        (future_data['Date'].dt.date >= current_date) & 
+        (future_data['Date'].dt.date <= next_week)
+    ].copy()
+    
+    if this_weeks_matches.empty:
+        print("❌ No matches found for this week")
         return
+    
+    print(f"📅 This week's matches: {len(this_weeks_matches)}")
     
     # Train models
     models = train_and_evaluate_models(X_train, y_side, y_over)
     side_model, over_model, side_accuracy, over_accuracy = models
     
-    # Make predictions
-    print("🔮 Making predictions...")
-    side_proba = side_model.predict_proba(X_predict)
-    over_proba = over_model.predict_proba(X_predict)
+    # Make predictions only for this week's matches
+    print("🔮 Making predictions for this week...")
+    X_predict_this_week = X_predict.loc[this_weeks_matches.index]
+    side_proba = side_model.predict_proba(X_predict_this_week)
+    over_proba = over_model.predict_proba(X_predict_this_week)
     
     # Prepare predictions dataframe
-    future_data = future_data.loc[X_predict.index].copy()
-    future_data['P_Home'] = side_proba[:, 1]
-    future_data['P_Away'] = side_proba[:, 0]
-    future_data['P_Over'] = over_proba[:, 1]
-    future_data['P_Under'] = over_proba[:, 0]
-    future_data['Limit_Line'] = limit_line
+    this_weeks_matches = this_weeks_matches.copy()
+    this_weeks_matches['P_Home'] = side_proba[:, 1]
+    this_weeks_matches['P_Away'] = side_proba[:, 0]
+    this_weeks_matches['P_Over'] = over_proba[:, 1]
+    this_weeks_matches['P_Under'] = over_proba[:, 0]
     
-    # Bu haftaki maçları bul
-    this_weeks_matches = get_this_weeks_matches(future_data)
+    # Analyze each day of the week
+    analysis_results = []
+    for date in sorted(this_weeks_matches['Date'].dt.date.unique()):
+        days_matches = this_weeks_matches[this_weeks_matches['Date'].dt.date == date].copy()
+        
+        print(f"\n📅 Analysis Date: {date}")
+        print(f"📊 Matches to analyze: {len(days_matches)}")
+        
+        # Calculate average limit line for the day
+        avg_limit_line = days_matches['Limit_Line'].mean()
+        print(f"📊 Average Limit Line: {avg_limit_line:.1f}")
+        
+        # Find valuable bets
+        valuable_bets = find_valuable_bets(days_matches, MIN_PROBABILITY_THRESHOLD)
+        
+        if valuable_bets.empty:
+            print("❌ No valuable bets found")
+        else:
+            print(f"✅ Found {len(valuable_bets)} valuable bet(s)")
+            analysis_results.append((date, valuable_bets, avg_limit_line))
     
-    if this_weeks_matches.empty:
-        print("❌ No matches found for this week")
-        # Tüm gelecek maçları göster
-        all_future = future_data[future_data['Date'].dt.date >= datetime.now().date()]
-        if not all_future.empty:
-            print("📅 All future matches:")
-            date_summary = all_future.groupby(all_future['Date'].dt.date).size()
-            for date, count in date_summary.items():
-                days_away = (date - datetime.now().date()).days
-                print(f"   {date}: {count} matches ({days_away} days away)")
-        return
-    
-    # İlk günün maçlarını al (genellikle en yakın tarih)
-    analysis_date = this_weeks_matches['Date'].min().date()
-    todays_matches = this_weeks_matches[this_weeks_matches['Date'].dt.date == analysis_date].copy()
-    
-    print(f"\n📅 Analysis Date: {analysis_date}")
-    print(f"📊 Matches to analyze: {len(todays_matches)}")
-    print(f"📊 Total Score Limit Line: {limit_line:.1f}")
-    print(f"🎯 Minimum Probability Threshold: {MIN_PROBABILITY_THRESHOLD}")
-    
-    # Find valuable bets
-    valuable_bets = find_valuable_bets(todays_matches, DEFAULT_ODDS, MIN_PROBABILITY_THRESHOLD)
-    
-    if valuable_bets.empty:
-        print("❌ No valuable bets found today")
-    else:
-        print(f"✅ Found {len(valuable_bets)} valuable bet(s)")
-        print("\n" + valuable_bets.to_string(index=False))
-    
-    # Send Telegram notification
-    send_telegram_message(valuable_bets, analysis_date)
+    # Send Telegram messages for each day with valuable bets
+    for date, valuable_bets, limit_line in analysis_results:
+        if not valuable_bets.empty:
+            send_telegram_message(valuable_bets, date, limit_line)
+        else:
+            print(f"📅 No bets to send for {date}")
     
     print("\n🎯 Analysis complete!")
 
