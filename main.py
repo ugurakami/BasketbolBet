@@ -1,308 +1,452 @@
+"""
+Basketball Betting Analytics System
+Author: AI Assistant
+Description: Machine learning system for basketball match predictions and betting value detection
+Version: 1.0
+"""
+
 import pandas as pd
+import numpy as np
+import requests
+import os
 from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 from sklearn.preprocessing import LabelEncoder
-import numpy as np
-import requests
-import os
+import warnings
+warnings.filterwarnings('ignore')
 
 # =================================================================
-#                         1. KONFİGÜRASYONLAR
+#                         CONFIGURATION
 # =================================================================
 
-# --- Veri Yolu ---
-FILE_NAME = "BasketbolFikstür - Sayfa1.tsv" 
-# NOT: NBA verilerinizi bu dosyaya "Lig: NBA" sütunuyla eklemiş olmalısınız.
+# Data Settings
+FILE_NAME = "basketball_data.tsv"
 
-# --- Telegram Ayarları ---
-# Not: GitHub Actions kullanıyorsanız, bu değerler ortam değişkenlerinden (secrets) alınacaktır.
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN") 
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "YOUR_CHAT_ID")
+# Model Settings
+DEFAULT_ODDS = 1.90
+MIN_PROBABILITY_THRESHOLD = 0.55
+RECENT_MATCHES_COUNT = 5
+MIN_ACCURACY_THRESHOLD = 0.55
+
+# Risk Management
+KELLY_FRACTION = 0.25
+MAX_BANKROLL_PERCENTAGE = 1.0
+
+# Telegram Settings (Set via GitHub Secrets)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
-# --- Kelly Kriteri & Model Ayarları ---
-VARSAYILAN_ORAN = 1.90         # Simülasyon için kullanılan sabit oran (Gerçekte bu oran dışarıdan gelmeli)
-P_ESIGI = 0.55                 # Bahis alınabilmesi için modelin minimum olasılık eşiği
-MODEL_ACC_ESIGI = 0.55         # Modelin kabul edilebilir minimum Çapraz Doğrulama Accuracy değeri
-N_MAC = 5                      # Form ve H2H hesaplaması için kullanılan son maç sayısı
-
 # =================================================================
-#                         2. YARDIMCI FONKSİYONLAR
+#                         UTILITY FUNCTIONS
 # =================================================================
 
-def kelly_criterion(p, b):
-    """Kelly Kriteri hesaplaması: f* = (b*p - q) / b"""
-    q = 1 - p
-    if (b * p - q) <= 0:
+def calculate_kelly_criterion(probability, odds):
+    """Calculate Kelly Criterion bet size"""
+    net_odds = odds - 1
+    q = 1 - probability
+    
+    if (net_odds * probability - q) <= 0:
         return 0.0
-    return (b * p - q) / b
+    return (net_odds * probability - q) / net_odds
 
-def degerli_bahisleri_sec(tahmin_df, odds_varsayimi, p_esigi):
-    degerli_bahisler = []
-    b = odds_varsayimi - 1
-    
-    for index, row in tahmin_df.iterrows():
-        # Taraf Tahminleri
-        for bahis_tipi, p_col, secim in [
-            ('Taraf', 'P_Ev', f"{row['Ev_Sahibi']} Kazanır"),
-            ('Taraf', 'P_Dep', f"{row['Deplasman']} Kazanır")
-        ]:
-            if row[p_col] > p_esigi:
-                f_kelly = kelly_criterion(row[p_col], b)
-                if f_kelly > 0.001: # %0.1'den büyük kelly payı olanları al
-                    degerli_bahisler.append({'Maç': f"{row['Ev_Sahibi']} vs {row['Deplasman']} ({row['Lig']})", 'Bahis_Turu': bahis_tipi, 'Seçim': secim, 'Model_Olasilik': row[p_col], 'Varsayilan_Oran': odds_varsayimi, 'Kelly_Payi_Yuzde': f_kelly * 100})
-        
-        # Sayı Limiti (Alt/Üst) Tahminleri
-        limit = int(row['Limit_Cizgisi'])
-        for bahis_tipi, p_col, secim in [
-            ('Sayı Limiti', 'P_Ust', f"Üst {limit}"),
-            ('Sayı Limiti', 'P_Alt', f"Alt {limit}")
-        ]:
-            if row[p_col] > p_esigi:
-                f_kelly = kelly_criterion(row[p_col], b)
-                if f_kelly > 0.001:
-                    degerli_bahisler.append({'Maç': f"{row['Ev_Sahibi']} vs {row['Deplasman']} ({row['Lig']})", 'Bahis_Turu': bahis_tipi, 'Seçim': secim, 'Model_Olasilik': row[p_col], 'Varsayilan_Oran': odds_varsayimi, 'Kelly_Payi_Yuzde': f_kelly * 100})
-    
-    return pd.DataFrame(degerli_bahisler)
+def fractional_kelly_bet_size(full_kelly_percentage, fraction=KELLY_FRACTION, max_percent=MAX_BANKROLL_PERCENTAGE):
+    """Apply fractional Kelly and bankroll limits"""
+    fractional = full_kelly_percentage * fraction
+    return min(fractional, max_percent)
 
-def telegram_mesaj_gonder(df_kelly, tarih, is_model_acceptable_flag):
-    
-    if TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN" or TELEGRAM_CHAT_ID == "YOUR_CHAT_ID":
-        print("Telegram bot bilgileri ayarlanmadı. Mesaj gönderme atlanıyor.")
+def send_telegram_message(df_bets, analysis_date):
+    """Send analysis results via Telegram"""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Telegram credentials not configured. Skipping message.")
         return
 
-    mesaj = f"📅 *{tarih} Tarihli Basketbol Analizi*\n\n"
-
-    if not is_model_acceptable_flag:
-        mesaj += "❌ *KRİTİK HATA:* Model Accuracy eşiği sağlanamadı. Güvenliğiniz için bahis önlenmiştir! 🚨"
-    elif df_kelly.empty:
-        mesaj += "🚫 Kelly Kriterine göre pozitif beklenen değere sahip değerli bir bahis bulunamamıştır."
+    if df_bets.empty:
+        message = f"🏀 *Basketball Betting Analysis - {analysis_date}*\n\n"
+        message += "No valuable bets found today based on Kelly Criterion. 🚫"
     else:
-        mesaj += "💰 *Kelly Kriterine Göre Değerli Bahis Önerileri (Fractional Kelly)*\n\n"
+        message = f"💰 *Basketball Betting Recommendations - {analysis_date}*\n\n"
         
-        for index, row in df_kelly.iterrows():
-            mesaj += f"🏀 *Maç:* {row['Maç']}\n"
-            mesaj += f"   - *Seçim:* {row['Seçim']}\n"
-            mesaj += f"   - *Model P:* %{row['Model_Olasilik']:.1%}\n"
-            mesaj += f"   - *Kelly Payı:* %{row['Kelly_Payi_Yuzde']:.1f} (Risk Sınırı)\n"
-            mesaj += f"   - *Varsayılan Oran:* {row['Varsayilan_Oran']:.2f}\n"
-            mesaj += "--------------------------\n"
+        for _, row in df_bets.iterrows():
+            message += f"• *Match:* {row['Match']}\n"
+            message += f"  - *Bet:* {row['Selection']}\n"
+            message += f"  - *Model Probability:* {row['Model_Probability']:.1%}\n"
+            message += f"  - *Bet Size:* {row['Kelly_Percentage']:.1f}% of bankroll\n"
+            message += f"  - *Odds:* {row['Odds']:.2f}\n"
+            message += "────────────────────\n"
 
-    payload = {'chat_id': TELEGRAM_CHAT_ID, 'text': mesaj, 'parse_mode': 'Markdown'}
+    payload = {
+        'chat_id': TELEGRAM_CHAT_ID,
+        'text': message,
+        'parse_mode': 'Markdown'
+    }
     
     try:
-        response = requests.post(TELEGRAM_API_URL, data=payload)
+        response = requests.post(TELEGRAM_API_URL, data=payload, timeout=10)
         response.raise_for_status()
-        print(f"✅ Telegram mesajı başarıyla gönderildi.")
+        print("✅ Telegram message sent successfully")
     except requests.exceptions.RequestException as e:
-        print(f"❌ Telegram mesajı gönderme hatası: {e}")
-
-def is_model_acceptable(cv_scores, threshold):
-    """Model accuracy kabul edilebilir mi?"""
-    return cv_scores.mean() > threshold
+        print(f"❌ Telegram error: {e}")
 
 # =================================================================
-#                         3. GÜVENLİ KODLAMA VE ÖZELLİK MÜHENDİSLİĞİ
+#                         FEATURE ENGINEERING
 # =================================================================
 
 def safe_label_encode(train_series, test_series):
-    """Bilinmeyen değerleri -1 (Unknown) olarak işleyen güvenli Label Encoding."""
+    """Safe label encoding with unknown value handling"""
     le = LabelEncoder()
     train_encoded = le.fit_transform(train_series.astype(str))
     
     test_encoded = []
     for val in test_series.astype(str):
-        try:
+        if val in le.classes_:
             test_encoded.append(le.transform([val])[0])
-        except ValueError:
-            test_encoded.append(-1) # Bilinmeyen değer
+        else:
+            test_encoded.append(-1)  # Unknown value
             
     return train_encoded, np.array(test_encoded)
 
-
-def calculate_dynamic_features(df_input, n_mac):
-    """Dinlenme Günü, Form ve H2H özelliklerini hesaplar (Leakage Safe)"""
-    df_temp = df_input.copy()
+def calculate_team_form(team, date, is_home, historical_data, n_matches):
+    """Calculate team form based on recent matches"""
+    if is_home:
+        matches = historical_data[
+            (historical_data['Home_Team'] == team) & 
+            (historical_data['Date'] < date)
+        ].tail(n_matches)
+        wins = (matches['Winning_Side'] == 1).sum()
+    else:
+        matches = historical_data[
+            (historical_data['Away_Team'] == team) & 
+            (historical_data['Date'] < date)
+        ].tail(n_matches)
+        wins = (matches['Winning_Side'] == 0).sum()
     
-    # 1. Dinlenme Günü Hesaplama (Shift(1) ile geçmişe bakılır)
-    all_matches_home = df_temp[['Tarih', 'Ev_Sahibi']].rename(columns={'Ev_Sahibi': 'Takım'})
-    all_matches_away = df_temp[['Tarih', 'Deplasman']].rename(columns={'Deplasman': 'Takım'})
-    all_matches = pd.concat([all_matches_home, all_matches_away]).sort_values('Tarih').reset_index(drop=True)
+    return wins / len(matches) if len(matches) > 0 else 0.5
 
-    all_matches['Onceki_Tarih'] = all_matches.groupby('Takım')['Tarih'].shift(1)
-    all_matches['Dinlenme_Gunu'] = (all_matches['Tarih'] - all_matches['Onceki_Tarih']).dt.days
-
-    rest_days_home = all_matches[['Tarih', 'Takım', 'Dinlenme_Gunu']].rename(columns={'Takım': 'Ev_Sahibi', 'Dinlenme_Gunu': 'Ev_Dinlenme_Gunu'})
-    df_temp = pd.merge(df_temp, rest_days_home, on=['Tarih', 'Ev_Sahibi'], how='left', suffixes=('_x', ''))
-
-    rest_days_away = all_matches[['Tarih', 'Takım', 'Dinlenme_Gunu']].rename(columns={'Takım': 'Deplasman', 'Dinlenme_Gunu': 'Dep_Dinlenme_Gunu'})
-    df_temp = pd.merge(df_temp, rest_days_away, on=['Tarih', 'Deplasman'], how='left', suffixes=('_x', ''))
-
-    df_temp['Ev_Dinlenme_Gunu'] = df_temp['Ev_Dinlenme_Gunu'].fillna(7)
-    df_temp['Dep_Dinlenme_Gunu'] = df_temp['Dep_Dinlenme_Gunu'].fillna(7)
-    df_temp['Dinlenme_Gunu_Farki'] = df_temp['Ev_Dinlenme_Gunu'] - df_temp['Dep_Dinlenme_Gunu']
+def calculate_h2h_record(home_team, away_team, date, historical_data, n_matches):
+    """Calculate head-to-head record between teams"""
+    h2h_matches = historical_data[
+        ((historical_data['Home_Team'] == home_team) & (historical_data['Away_Team'] == away_team)) |
+        ((historical_data['Home_Team'] == away_team) & (historical_data['Away_Team'] == home_team))
+    ].query('Date < @date').tail(n_matches)
     
-    # 2. Form ve H2H Hesaplama (Sadece skoru bilinen maçlara bakılır)
-    df_temp['Kazanan_Taraf'] = (df_temp['MS_Ev'] > df_temp['MS_Dep']).astype('float').fillna(-1)
-    df_gecmis_local = df_temp[df_temp['MS_Ev'].notnull()].copy()
-
-    def hesapla_ozel_form(takım, tarih, ev_mi, n):
-        if ev_mi:
-            maclar = df_gecmis_local[(df_gecmis_local['Ev_Sahibi'] == takım) & (df_gecmis_local['Tarih'] < tarih)].tail(n)
-            galibiyet_sayisi = (maclar['Kazanan_Taraf'] == 1).sum()
-        else:
-            maclar = df_gecmis_local[(df_gecmis_local['Deplasman'] == takım) & (df_gecmis_local['Tarih'] < tarih)].tail(n)
-            galibiyet_sayisi = (maclar['Kazanan_Taraf'] == 0).sum()
-        return galibiyet_sayisi / len(maclar) if len(maclar) > 0 else 0.5
-
-    df_temp['Ev_Sahibi_Ev_Formu'] = df_temp.apply(
-        lambda row: hesapla_ozel_form(row['Ev_Sahibi'], row['Tarih'], True, n_mac), axis=1)
-    df_temp['Dep_Takim_Dep_Formu'] = df_temp.apply(
-        lambda row: hesapla_ozel_form(row['Deplasman'], row['Tarih'], False, n_mac), axis=1)
-
-    def hesapla_h2h_rekoru(ev_takimi, dep_takimi, tarih, n):
-        h2h_maclar = df_gecmis_local[
-            ((df_gecmis_local['Ev_Sahibi'] == ev_takimi) & (df_gecmis_local['Deplasman'] == dep_takimi)) |
-            ((df_gecmis_local['Ev_Sahibi'] == dep_takimi) & (df_gecmis_local['Deplasman'] == ev_takimi))
-        ].query('Tarih < @tarih').tail(n)
-        
-        if len(h2h_maclar) == 0: return 0.5
-        
-        ev_kazanma_sayisi = h2h_maclar.apply(
-            lambda row: 1 if (row['Ev_Sahibi'] == ev_takimi and row['Kazanan_Taraf'] == 1) or 
-                              (row['Deplasman'] == ev_takimi and row['Kazanan_Taraf'] == 0) 
-                         else 0, axis=1
-        ).sum()
-        
-        return ev_kazanma_sayisi / len(h2h_maclar)
-
-    df_temp['H2H_Rekor'] = df_temp.apply(
-        lambda row: hesapla_h2h_rekoru(row['Ev_Sahibi'], row['Deplasman'], row['Tarih'], n_mac), axis=1)
-        
-    return df_temp
-
-def prepare_data_pipeline(df_input, n_mac):
-    """Data Leakage'i tamamen önleyen ana pipeline."""
+    if len(h2h_matches) == 0:
+        return 0.5
     
-    df_train = df_input[df_input['MS_Ev'].notnull()].copy()
-    df_predict = df_input[df_input['MS_Ev'].isnull()].copy()
-
-    # Limit Çizgisi SADECE TRAIN'den Hesaplama
-    limit_cizgisi = df_train['Toplam_Skor'].median()
-    df_train['Toplam_Skor_Ust'] = (df_train['Toplam_Skor'] > limit_cizgisi).astype('float')
-
-    # Özellik Hesaplama için Train ve Predict verisini birleştirme (Dinlenme Günü için kritik)
-    df_full_sorted = pd.concat([df_train, df_predict], ignore_index=True).sort_values(by='Tarih').reset_index(drop=True)
-    df_full_featured = calculate_dynamic_features(df_full_sorted, n_mac)
+    home_wins = h2h_matches.apply(
+        lambda row: 1 if (
+            (row['Home_Team'] == home_team and row['Winning_Side'] == 1) or
+            (row['Away_Team'] == home_team and row['Winning_Side'] == 0)
+        ) else 0, axis=1
+    ).sum()
     
-    # Sonuçları tekrar ayır
-    df_train_featured = df_full_featured[df_full_featured['MS_Ev'].notnull()].copy()
-    df_predict_featured = df_full_featured[df_full_featured['MS_Ev'].isnull()].copy()
+    return home_wins / len(h2h_matches)
 
-    # Kategorik Kodlama
-    FEATURE_COLS = ['Dinlenme_Gunu_Farki', 'Ev_Sahibi_Ev_Formu', 'Dep_Takim_Dep_Formu', 'H2H_Rekor', 'Ev_Sahibi', 'Deplasman', 'Lig']
-    df_train_featured = df_train_featured.dropna(subset=FEATURE_COLS).copy()
+def calculate_rest_days(df):
+    """Calculate rest days between matches for each team"""
+    home_matches = df[['Date', 'Home_Team']].rename(columns={'Home_Team': 'Team'})
+    away_matches = df[['Date', 'Away_Team']].rename(columns={'Away_Team': 'Team'})
     
-    X_train = df_train_featured[FEATURE_COLS].copy()
-    X_predict = df_predict_featured[FEATURE_COLS].copy()
-
-
-    for col in ['Ev_Sahibi', 'Deplasman', 'Lig']:
-        X_train_encoded, X_predict_encoded = safe_label_encode(X_train[col], X_predict[col])
-        X_train.loc[:, col] = X_train_encoded
-        X_predict.loc[:, col] = X_predict_encoded
-        
-    X_predict = X_predict.dropna().copy()
+    all_matches = pd.concat([home_matches, away_matches]).sort_values('Date').reset_index(drop=True)
+    all_matches['Previous_Date'] = all_matches.groupby('Team')['Date'].shift(1)
+    all_matches['Rest_Days'] = (all_matches['Date'] - all_matches['Previous_Date']).dt.days
     
-    return X_train, X_predict, df_train_featured, df_predict_featured, limit_cizgisi
+    return all_matches
+
+def create_features(df, historical_data, n_matches):
+    """Create comprehensive features for model training"""
+    df_features = df.copy()
+    
+    # Rest days calculation
+    rest_days_data = calculate_rest_days(df_features)
+    
+    home_rest = rest_days_data[['Date', 'Team', 'Rest_Days']].rename(
+        columns={'Team': 'Home_Team', 'Rest_Days': 'Home_Rest_Days'})
+    away_rest = rest_days_data[['Date', 'Team', 'Rest_Days']].rename(
+        columns={'Team': 'Away_Team', 'Rest_Days': 'Away_Rest_Days'})
+    
+    df_features = pd.merge(df_features, home_rest, on=['Date', 'Home_Team'], how='left')
+    df_features = pd.merge(df_features, away_rest, on=['Date', 'Away_Team'], how='left')
+    
+    df_features['Home_Rest_Days'] = df_features['Home_Rest_Days'].fillna(7)
+    df_features['Away_Rest_Days'] = df_features['Away_Rest_Days'].fillna(7)
+    df_features['Rest_Days_Diff'] = df_features['Home_Rest_Days'] - df_features['Away_Rest_Days']
+    
+    # Team form calculations
+    df_features['Home_Team_Home_Form'] = df_features.apply(
+        lambda row: calculate_team_form(row['Home_Team'], row['Date'], True, historical_data, n_matches), axis=1)
+    
+    df_features['Away_Team_Away_Form'] = df_features.apply(
+        lambda row: calculate_team_form(row['Away_Team'], row['Date'], False, historical_data, n_matches), axis=1)
+    
+    # Head-to-head record
+    df_features['H2H_Record'] = df_features.apply(
+        lambda row: calculate_h2h_record(row['Home_Team'], row['Away_Team'], row['Date'], historical_data, n_matches), axis=1)
+    
+    return df_features
 
 # =================================================================
-#                         4. ANA ÇALIŞTIRMA FONKSİYONU
+#                         BET ANALYSIS
 # =================================================================
 
-def main():
+def find_valuable_bets(predictions_df, odds, min_probability):
+    """Identify valuable bets using Kelly Criterion"""
+    valuable_bets = []
+    net_odds = odds - 1
+    
+    for _, match in predictions_df.iterrows():
+        match_name = f"{match['Home_Team']} vs {match['Away_Team']}"
+        limit_line = int(match['Limit_Line'])
+        
+        # Home win bet
+        if match['P_Home'] > min_probability:
+            kelly_full = calculate_kelly_criterion(match['P_Home'], odds)
+            kelly_fractional = fractional_kelly_bet_size(kelly_full)
+            
+            if kelly_fractional > 0.01:  # Minimum bet size threshold
+                valuable_bets.append({
+                    'Match': match_name,
+                    'Bet_Type': 'Side',
+                    'Selection': f"{match['Home_Team']} to Win",
+                    'Model_Probability': match['P_Home'],
+                    'Odds': odds,
+                    'Kelly_Percentage': kelly_fractional * 100
+                })
+        
+        # Away win bet
+        if match['P_Away'] > min_probability:
+            kelly_full = calculate_kelly_criterion(match['P_Away'], odds)
+            kelly_fractional = fractional_kelly_bet_size(kelly_full)
+            
+            if kelly_fractional > 0.01:
+                valuable_bets.append({
+                    'Match': match_name,
+                    'Bet_Type': 'Side',
+                    'Selection': f"{match['Away_Team']} to Win",
+                    'Model_Probability': match['P_Away'],
+                    'Odds': odds,
+                    'Kelly_Percentage': kelly_fractional * 100
+                })
+        
+        # Over bet
+        if match['P_Over'] > min_probability:
+            kelly_full = calculate_kelly_criterion(match['P_Over'], odds)
+            kelly_fractional = fractional_kelly_bet_size(kelly_full)
+            
+            if kelly_fractional > 0.01:
+                valuable_bets.append({
+                    'Match': match_name,
+                    'Bet_Type': 'Points Line',
+                    'Selection': f"Over {limit_line}",
+                    'Model_Probability': match['P_Over'],
+                    'Odds': odds,
+                    'Kelly_Percentage': kelly_fractional * 100
+                })
+        
+        # Under bet
+        if match['P_Under'] > min_probability:
+            kelly_full = calculate_kelly_criterion(match['P_Under'], odds)
+            kelly_fractional = fractional_kelly_bet_size(kelly_full)
+            
+            if kelly_fractional > 0.01:
+                valuable_bets.append({
+                    'Match': match_name,
+                    'Bet_Type': 'Points Line',
+                    'Selection': f"Under {limit_line}",
+                    'Model_Probability': match['P_Under'],
+                    'Odds': odds,
+                    'Kelly_Percentage': kelly_fractional * 100
+                })
+    
+    return pd.DataFrame(valuable_bets)
+
+# =================================================================
+#                         MAIN PIPELINE
+# =================================================================
+
+def load_and_clean_data(file_path):
+    """Load and clean basketball data"""
     try:
-        df = pd.read_csv(FILE_NAME, sep='\t')
+        df = pd.read_csv(file_path, sep='\t')
+        print(f"✅ Data loaded successfully: {len(df)} records")
     except FileNotFoundError:
-        print(f"HATA: '{FILE_NAME}' dosyası bulunamadı.")
-        return
-
-    # Veri Temizleme ve Dönüştürme
-    df = df.rename(columns={'MS(Ev)': 'MS_Ev', 'MS(Dep)': 'MS_Dep', 'İY(Ev)': 'IY_Ev', 'İY(Dep)': 'IY_Dep', 'Ev Sahibi': 'Ev_Sahibi', 'Deplasman': 'Deplasman'})
-    df['MS_Ev'] = pd.to_numeric(df['MS_Ev'], errors='coerce')
-    df['MS_Dep'] = pd.to_numeric(df['MS_Dep'], errors='coerce')
-    df['Tarih'] = pd.to_datetime(df['Tarih'], format='%d.%m.%Y')
-    df = df.sort_values(by='Tarih').reset_index(drop=True)
-    df['Toplam_Skor'] = df['MS_Ev'] + df['MS_Dep']
-    df['Kazanan_Taraf'] = (df['MS_Ev'] > df['MS_Dep']).astype('float').fillna(-1)
-
-    # 1. Data Pipeline'ı Uygula
-    X_train, X_predict, df_train_featured, df_predict_featured, limit_cizgisi = prepare_data_pipeline(df.copy(), N_MAC)
-
-    y_taraf = df_train_featured['Kazanan_Taraf']
-    y_limit = df_train_featured['Toplam_Skor_Ust']
+        print(f"❌ Error: File '{file_path}' not found")
+        return None
     
-    # 2. Model Eğitimi ve Kalite Kontrolü
+    # Column renaming and cleaning
+    df = df.rename(columns={
+        'MS(Ev)': 'Home_Score',
+        'MS(Dep)': 'Away_Score', 
+        'İY(Ev)': 'Home_Stats',
+        'İY(Dep)': 'Away_Stats',
+        'Ev Sahibi': 'Home_Team',
+        'Deplasman': 'Away_Team',
+        'Tarih': 'Date'
+    })
+    
+    # Data type conversions
+    df['Home_Score'] = pd.to_numeric(df['Home_Score'], errors='coerce')
+    df['Away_Score'] = pd.to_numeric(df['Away_Score'], errors='coerce')
+    df['Date'] = pd.to_datetime(df['Date'], format='%d.%m.%Y')
+    df = df.sort_values('Date').reset_index(drop=True)
+    
+    # Create target variables
+    df['Total_Score'] = df['Home_Score'] + df['Away_Score']
+    df['Winning_Side'] = (df['Home_Score'] > df['Away_Score']).astype('float')
+    df['Winning_Side'] = df['Winning_Side'].where(df['Home_Score'].notna(), -1)
+    
+    return df
+
+def prepare_model_data(df, n_matches):
+    """Prepare features and targets for model training"""
+    # Split data into historical and future matches
+    historical_data = df[df['Home_Score'].notna()].copy()
+    future_data = df[df['Home_Score'].isna()].copy()
+    
+    if historical_data.empty:
+        print("❌ No historical data for training")
+        return None, None, None, None
+    
+    # Calculate limit line from historical data only
+    limit_line = historical_data['Total_Score'].median()
+    historical_data['Over_Line'] = (historical_data['Total_Score'] > limit_line).astype('float')
+    
+    # Create features
+    print("🔄 Creating features...")
+    historical_features = create_features(historical_data, historical_data, n_matches)
+    
+    if not future_data.empty:
+        future_features = create_features(future_data, historical_data, n_matches)
+    else:
+        future_features = pd.DataFrame()
+    
+    # Define feature columns
+    feature_columns = [
+        'Rest_Days_Diff', 'Home_Team_Home_Form', 'Away_Team_Away_Form', 
+        'H2H_Record', 'Home_Team', 'Away_Team', 'League'
+    ]
+    
+    # Prepare training data
+    X_train = historical_features[feature_columns].copy()
+    X_train = X_train.dropna()
+    
+    if X_train.empty:
+        print("❌ No valid training data after preprocessing")
+        return None, None, None, None
+    
+    # Prepare prediction data
+    if not future_features.empty:
+        X_predict = future_features[feature_columns].copy()
+        X_predict = X_predict.dropna()
+    else:
+        X_predict = pd.DataFrame()
+    
+    # Encode categorical variables
+    for col in ['Home_Team', 'Away_Team', 'League']:
+        if not X_train.empty and col in X_train.columns:
+            if not X_predict.empty and col in X_predict.columns:
+                X_train[col], X_predict[col] = safe_label_encode(X_train[col], X_predict[col])
+            else:
+                le = LabelEncoder()
+                X_train[col] = le.fit_transform(X_train[col].astype(str))
+    
+    y_side = historical_features.loc[X_train.index, 'Winning_Side']
+    y_over = historical_features.loc[X_train.index, 'Over_Line']
+    
+    return X_train, X_predict, y_side, y_over, limit_line, future_features
+
+def train_and_evaluate_models(X_train, y_side, y_over):
+    """Train and evaluate machine learning models"""
+    print("🤖 Training models...")
+    
+    # Initialize models
+    side_model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    over_model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    
+    # Time-series cross validation
     tscv = TimeSeriesSplit(n_splits=5)
     
-    # --- Taraf Modeli ---
-    model_taraf = RandomForestClassifier(n_estimators=100, random_state=42)
-    taraf_scores = cross_val_score(model_taraf, X_train, y_taraf, cv=tscv, scoring='accuracy')
-    taraf_acc_ok = is_model_acceptable(taraf_scores, MODEL_ACC_ESIGI)
-    print(f"\nModel 1 (Taraf) Çapraz Doğrulama (Accuracy): {taraf_scores.mean():.2f}")
+    # Evaluate side model
+    side_scores = cross_val_score(side_model, X_train, y_side, cv=tscv, scoring='accuracy')
+    side_accuracy = side_scores.mean()
+    print(f"✅ Side Model Accuracy: {side_accuracy:.3f} (+/- {side_scores.std() * 2:.3f})")
     
-    # --- Limit Modeli ---
-    model_limit = RandomForestClassifier(n_estimators=100, random_state=42)
-    limit_scores = cross_val_score(model_limit, X_train, y_limit, cv=tscv, scoring='accuracy')
-    limit_acc_ok = is_model_acceptable(limit_scores, MODEL_ACC_ESIGI)
-    print(f"Model 2 (Limit) Çapraz Doğrulama (Accuracy): {limit_scores.mean():.2f}")
-
-    df_kelly = pd.DataFrame() # Varsayılan boş dataframe
-
-    if taraf_acc_ok and limit_acc_ok:
-        # Modelleri tüm train seti üzerinde yeniden eğit
-        model_taraf.fit(X_train, y_taraf)
-        model_limit.fit(X_train, y_limit)
-        
-        # Tahminleri Yapma
-        proba_taraf = model_taraf.predict_proba(X_predict)
-        proba_limit = model_limit.predict_proba(X_predict)
-
-        df_predict_featured.loc[:, 'P_Ev'] = proba_taraf[:, 1]
-        df_predict_featured.loc[:, 'P_Dep'] = proba_taraf[:, 0]
-        df_predict_featured.loc[:, 'P_Ust'] = proba_limit[:, 1]
-        df_predict_featured.loc[:, 'P_Alt'] = proba_limit[:, 0]
-        df_predict_featured.loc[:, 'Limit_Cizgisi'] = limit_cizgisi
-
-        # Kelly Kriterini Uygulama (Fractional)
-        bugunun_tarihi = df_predict_featured['Tarih'].min()
-        tahmin_sonuclari_bugun = df_predict_featured[df_predict_featured['Tarih'] == bugunun_tarihi].copy()
-
-        df_kelly_full = degerli_bahisleri_sec(tahmin_sonuclari_bugun, VARSAYILAN_ORAN, P_ESIGI)
-        
-        # Fractional Kelly ve Bankroll %1 Sınırı (Risk Yönetimi)
-        if not df_kelly_full.empty:
-            df_kelly_full['Kelly_Payi_Yuzde'] = df_kelly_full['Kelly_Payi_Yuzde'].apply(
-                lambda x: min(x * 0.25, 1.0) # Fractional (25%)
-            )
-            df_kelly = df_kelly_full[df_kelly_full['Kelly_Payi_Yuzde'] > 0.001]
-        else:
-            df_kelly = pd.DataFrame()
-
-        print(f"\n--- Analiz Tarihi: {bugunun_tarihi.strftime('%Y-%m-%d')} ---")
-        if df_kelly.empty:
-            print("Kelly kriterine göre pozitif değere sahip bahis bulunamadı. 🚫")
-        else:
-            print(df_kelly.to_markdown(index=False, floatfmt=".2f"))
+    # Evaluate over/under model  
+    over_scores = cross_val_score(over_model, X_train, y_over, cv=tscv, scoring='accuracy')
+    over_accuracy = over_scores.mean()
+    print(f"✅ Over/Under Model Accuracy: {over_accuracy:.3f} (+/- {over_scores.std() * 2:.3f})")
     
+    # Check model quality
+    if side_accuracy < MIN_ACCURACY_THRESHOLD or over_accuracy < MIN_ACCURACY_THRESHOLD:
+        print("⚠️  Model accuracy below threshold. Proceed with caution.")
+    
+    # Train final models
+    side_model.fit(X_train, y_side)
+    over_model.fit(X_train, y_over)
+    
+    return side_model, over_model, side_accuracy, over_accuracy
+
+def main():
+    """Main execution function"""
+    print("🏀 Basketball Betting Analytics System")
+    print("=" * 50)
+    
+    # Load data
+    df = load_and_clean_data(FILE_NAME)
+    if df is None:
+        return
+    
+    # Prepare model data
+    model_data = prepare_model_data(df, RECENT_MATCHES_COUNT)
+    if model_data[0] is None:
+        return
+        
+    X_train, X_predict, y_side, y_over, limit_line, future_data = model_data
+    
+    # Check if we have data for prediction
+    if X_predict.empty:
+        print("ℹ️  No upcoming matches to predict")
+        return
+    
+    # Train models
+    models = train_and_evaluate_models(X_train, y_side, y_over)
+    side_model, over_model, side_accuracy, over_accuracy = models
+    
+    # Make predictions
+    print("🔮 Making predictions...")
+    side_proba = side_model.predict_proba(X_predict)
+    over_proba = over_model.predict_proba(X_predict)
+    
+    # Prepare predictions dataframe
+    future_data = future_data.loc[X_predict.index].copy()
+    future_data['P_Home'] = side_proba[:, 1]  # Home win probability
+    future_data['P_Away'] = side_proba[:, 0]  # Away win probability  
+    future_data['P_Over'] = over_proba[:, 1]  # Over probability
+    future_data['P_Under'] = over_proba[:, 0]  # Under probability
+    future_data['Limit_Line'] = limit_line
+    
+    # Find today's matches
+    today = future_data['Date'].min()
+    todays_matches = future_data[future_data['Date'] == today].copy()
+    
+    print(f"\n📅 Analysis Date: {today.strftime('%Y-%m-%d')}")
+    print(f"📊 Total Score Limit Line: {limit_line:.1f}")
+    print(f"🎯 Minimum Probability Threshold: {MIN_PROBABILITY_THRESHOLD}")
+    
+    # Find valuable bets
+    valuable_bets = find_valuable_bets(todays_matches, DEFAULT_ODDS, MIN_PROBABILITY_THRESHOLD)
+    
+    if valuable_bets.empty:
+        print("❌ No valuable bets found today")
     else:
-        bugunun_tarihi = df_predict_featured['Tarih'].min()
-        print("Model Accuracy eşiği sağlanamadığı için tahmin ve Kelly kriteri atlanmıştır.")
-
-    # Telegram Mesajını Gönderme (Model başarısız olsa bile bilgi verir)
-    telegram_mesaj_gonder(df_kelly, bugunun_tarihi.strftime('%Y-%m-%d'), taraf_acc_ok and limit_acc_ok)
-
+        print(f"✅ Found {len(valuable_bets)} valuable bet(s)")
+        print("\n" + valuable_bets.to_string(index=False))
+    
+    # Send Telegram notification
+    send_telegram_message(valuable_bets, today.strftime('%Y-%m-%d'))
+    
+    print("\n🎯 Analysis complete!")
 
 if __name__ == "__main__":
     main()
