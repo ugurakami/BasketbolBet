@@ -235,7 +235,7 @@ while True:
     print("1. Tüm ligleri göster")
     print("2. Belirli bir lig raporu")
     print("3. Takım detayları")
-    print("4. Telegram Raporları")  # ✨ YENİ
+    print("4. Telegram Raporları")
     print("5. Çıkış")
 
     secim = input("\nSeçiminiz (1-5): ").strip()
@@ -243,17 +243,27 @@ while True:
     if secim == '1':
         lig_analizi(df)
     elif secim == '2':
-        # ... mevcut kod
+        print(f"\nMevcut ligler: {', '.join(df['Lig'].unique())}")
+        lig_sec = input("Lig adını girin: ").strip()
+        if lig_sec in df['Lig'].unique():
+            detayli_lig_raporu(lig_sec)
+        else:
+            print("❌ Geçersiz lig adı!")
     elif secim == '3':
-        # ... mevcut kod
-    elif secim == '4':  # ✨ TELEGRAM SEÇENEĞİ
+        takim_sec = input("Takım adını girin: ").strip()
+        team_matches = df[(df['Ev Sahibi'] == takim_sec) | (df['Deplasman'] == takim_sec)]
+        if len(team_matches) > 0:
+            print(f"\n{takim_sec} takımının maçları:")
+            print(team_matches[['Tarih', 'Lig', 'Ev Sahibi', 'MS(Ev)', 'MS(Dep)', 'Deplasman']].to_string(index=False))
+        else:
+            print("❌ Takım bulunamadı!")
+    elif secim == '4':
         telegram_menu_ekle(df)
     elif secim == '5':
         print("👋 Program sonlandırıldı!")
         break
     else:
         print("❌ Geçersiz seçim!")
-
 # SON ÖZET
 print(f"\n{' ANALİZ TAMAMLANDI ':=^50}")
 print(f"📊 Toplam işlenen satır: {len(df)}")
