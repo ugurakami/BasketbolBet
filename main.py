@@ -306,7 +306,7 @@ def prepare_model_data(df, n_matches):
     
     if historical_data.empty:
         print("❌ No historical data for training")
-        return None, None, None, None
+        return None, None, None, None, None, None
     
     # Calculate limit line from historical data only
     limit_line = historical_data['Total_Score'].median()
@@ -333,7 +333,7 @@ def prepare_model_data(df, n_matches):
     
     if X_train.empty:
         print("❌ No valid training data after preprocessing")
-        return None, None, None, None
+        return None, None, None, None, None, None
     
     # Prepare prediction data
     if not future_features.empty:
