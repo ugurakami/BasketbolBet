@@ -283,13 +283,30 @@ def load_and_clean_data(file_path):
         'Ev Sahibi': 'Home_Team',
         'Deplasman': 'Away_Team',
         'Tarih': 'Date',
-        'Lig': 'League'  # Lig sütunu eklendi
+        'Lig': 'League'
     })
     
     # Data type conversions
     df['Home_Score'] = pd.to_numeric(df['Home_Score'], errors='coerce')
     df['Away_Score'] = pd.to_numeric(df['Away_Score'], errors='coerce')
-    df['Date'] = pd.to_datetime(df['Date'], format='%d.%m.%Y')
+    
+    # ESKİ: df['Date'] = pd.to_datetime(df['Date'], format='%d.%m.%Y')
+    # YENİ: Daha esnek tarih parsing'i
+    print("🔄 Converting dates...")
+    df['Date'] = pd.to_datetime(df['Date'], format='%d.%m.%Y', errors='coerce')
+    
+    # Geçersiz tarihleri kontrol et
+    invalid_dates = df['Date'].isna().sum()
+    if invalid_dates > 0:
+        print(f"⚠️  Found {invalid_dates} invalid dates. They will be filtered out.")
+        # Geçersiz tarihleri göster
+        invalid_rows = df[df['Date'].isna()]
+        print("Invalid date examples:")
+        print(invalid_rows[['Date']].head())
+    
+    # Geçersiz tarihleri filtrele
+    df = df[df['Date'].notna()].copy()
+    
     df = df.sort_values('Date').reset_index(drop=True)
     
     # Create target variables
@@ -297,6 +314,7 @@ def load_and_clean_data(file_path):
     df['Winning_Side'] = (df['Home_Score'] > df['Away_Score']).astype('float')
     df['Winning_Side'] = df['Winning_Side'].where(df['Home_Score'].notna(), -1)
     
+    print(f"✅ Final dataset: {len(df)} valid records")
     return df
 
 def prepare_model_data(df, n_matches):
