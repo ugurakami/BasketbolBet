@@ -20,8 +20,8 @@ warnings.filterwarnings('ignore')
 #                         CONFIGURATION
 # =================================================================
 
-# Data Settings
-FILE_NAME = "basketball_data.tsv"
+# Data Settings - DOSYA ADI GÜNCELLENDİ
+FILE_NAME = "BasketbolFikstür - Sayfa1.tsv"
 
 # Model Settings
 DEFAULT_ODDS = 1.90
@@ -266,7 +266,7 @@ def find_valuable_bets(predictions_df, odds, min_probability):
 # =================================================================
 
 def load_and_clean_data(file_path):
-    """Load and clean basketball data"""
+    """Load and clean basketball data - ORJİNAL SÜTUN İSİMLERİYLE"""
     try:
         df = pd.read_csv(file_path, sep='\t')
         print(f"✅ Data loaded successfully: {len(df)} records")
@@ -274,7 +274,7 @@ def load_and_clean_data(file_path):
         print(f"❌ Error: File '{file_path}' not found")
         return None
     
-    # Column renaming and cleaning
+    # Orijinal sütun isimlerini koruyarak temizleme
     df = df.rename(columns={
         'MS(Ev)': 'Home_Score',
         'MS(Dep)': 'Away_Score', 
@@ -282,7 +282,8 @@ def load_and_clean_data(file_path):
         'İY(Dep)': 'Away_Stats',
         'Ev Sahibi': 'Home_Team',
         'Deplasman': 'Away_Team',
-        'Tarih': 'Date'
+        'Tarih': 'Date',
+        'Lig': 'League'  # Lig sütunu eklendi
     })
     
     # Data type conversions
@@ -321,7 +322,7 @@ def prepare_model_data(df, n_matches):
     else:
         future_features = pd.DataFrame()
     
-    # Define feature columns
+    # Define feature columns - League sütunu eklendi
     feature_columns = [
         'Rest_Days_Diff', 'Home_Team_Home_Form', 'Away_Team_Away_Form', 
         'H2H_Record', 'Home_Team', 'Away_Team', 'League'
