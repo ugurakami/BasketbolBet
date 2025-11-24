@@ -1,38 +1,27 @@
-name: 🏀 Basketbol Kelly Tahmin Botu Otomasyonu
-
+name: Daily Basketball Analysis
 on:
   schedule:
-    # Her gün UTC saat 08:00'de çalışır (TRT ile yaklaşık 11:00)
-    - cron: '0 8 * * *' 
-  workflow_dispatch: # Arayüzden manuel çalıştırmaya izin verir
+    - cron: '0 14 * * *'  # Daily at 2 PM UTC
+  workflow_dispatch:       # Manual trigger
 
 jobs:
-  tahmin_yap_ve_gonder:
+  analyze:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        python ./basketbol_tahmin_botu.py
-    
     steps:
-      - name: Kodu İndir
-        uses: actions/checkout@v4
-
-      - name: Python 3.10 Kurulumu
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
-      
-      - name: Gerekli Kütüphaneleri Kur
+          python-version: '3.9'
+          
+      - name: Install dependencies
         run: |
-          # Pandas, scikit-learn ve requests kütüphanelerini kurar
-          pip install pandas scikit-learn requests
-
-      # Önemli Not: Bu adımda veri dosyanızın (.tsv) de repoda olması gerekir.
-      
-      - name: Tahmin Kodunu Çalıştır ve Telegram'a Gönder
+          pip install -r requirements.txt
+          
+      - name: Run analysis
         env:
-          # GitHub Secrets'tan alınacak gizli değişkenler
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        
-        run: run: python basketbol_tahmin_botu.py
+        run: |
+          python basketball_analytics.py
