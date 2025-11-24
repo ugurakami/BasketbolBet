@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./
+        python $GITHUB_WORKSPACE/basketbol_tahmin_botu.py
     
     steps:
       - name: Kodu İndir
