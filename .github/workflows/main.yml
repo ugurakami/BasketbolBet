@@ -1,24 +1,21 @@
-name: Basketball Analysis
+name: Basketball Predictions
 
 on:
-  push:
-    branches: [ main ]
+  schedule:
+    - cron: '0 6 * * 1'  # Her Pazartesi 06:00 UTC (09:00 TR)
   workflow_dispatch:
 
 jobs:
-  analyze:
+  predict:
     runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Setup Python
-      uses: actions/setup-python@v4
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-        
-    - name: Install packages
-      run: pip install -r requirements.txt
-      
-    - name: Run analysis
-      run: python main.py
+    - run: pip install -r requirements.txt
+    - run: python main.py
