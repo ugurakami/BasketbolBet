@@ -5,6 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   run-analysis:
@@ -12,7 +13,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -24,16 +25,37 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Create sample data file
+    - name: Verify installations
       run: |
-        # Örnek veri dosyası oluştur (eğer yoksa)
-        if [ ! -f "BasketbolFikstür - Sayfa1.tsv" ]; then
-          echo "Tarih	Lig	Ev Sahibi	MS(Ev)	MS(Dep)	Deplasman	İY(Ev)	İY(Dep)" > "BasketbolFikstür - Sayfa1.tsv"
-          echo "2024-01-15	Eurolig	Fenerbahçe Beko	85	78	Real Madrid	45	40" >> "BasketbolFikstür - Sayfa1.tsv"
-          echo "2024-01-16	NBA	Lakers	110	105	Celtics	55	50" >> "BasketbolFikstür - Sayfa1.tsv"
-          echo "Örnek veri dosyası oluşturuldu"
+        echo "📦 Yüklü kütüphaneler:"
+        python -c "import pandas as pd; print(f'pandas: {pd.__version__}')"
+        python -c "import numpy as np; print(f'numpy: {np.__version__}')"
+        python -c "import matplotlib; print(f'matplotlib: {matplotlib.__version__}')"
+        python -c "import seaborn as sns; print(f'seaborn: {sns.__version__}')"
+        python -c "import sklearn; print(f'scikit-learn: {sklearn.__version__}')"
+        
+    - name: List repository files
+      run: |
+        echo "📁 Repository dosyaları:"
+        ls -la
+        echo "📊 Veri dosyası içeriği:"
+        if [ -f "BasketbolFikstür - Sayfa1.tsv" ]; then
+          head -5 "BasketbolFikstür - Sayfa1.tsv"
+        else
+          echo "❌ Veri dosyası bulunamadı!"
         fi
         
-    - name: Run analysis
+    - name: Run analysis script
       run: |
         python main.py
+      
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: analysis-output
+        path: |
+          *.png
+          *.jpg
+          *.csv
+        if-no-files-found: ignore
