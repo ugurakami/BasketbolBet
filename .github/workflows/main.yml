@@ -2,60 +2,23 @@ name: Basketball Analysis
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  run-analysis:
+  analyze:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
+    - uses: actions/checkout@v4
+    
+    - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
         
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Verify installations
-      run: |
-        echo "📦 Yüklü kütüphaneler:"
-        python -c "import pandas as pd; print(f'pandas: {pd.__version__}')"
-        python -c "import numpy as np; print(f'numpy: {np.__version__}')"
-        python -c "import matplotlib; print(f'matplotlib: {matplotlib.__version__}')"
-        python -c "import seaborn as sns; print(f'seaborn: {sns.__version__}')"
-        python -c "import sklearn; print(f'scikit-learn: {sklearn.__version__}')"
-        
-    - name: List repository files
-      run: |
-        echo "📁 Repository dosyaları:"
-        ls -la
-        echo "📊 Veri dosyası içeriği:"
-        if [ -f "BasketbolFikstür - Sayfa1.tsv" ]; then
-          head -5 "BasketbolFikstür - Sayfa1.tsv"
-        else
-          echo "❌ Veri dosyası bulunamadı!"
-        fi
-        
-    - name: Run analysis script
-      run: |
-        python main.py
+    - name: Install packages
+      run: pip install -r requirements.txt
       
-    - name: Upload artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: analysis-output
-        path: |
-          *.png
-          *.jpg
-          *.csv
-        if-no-files-found: ignore
+    - name: Run analysis
+      run: python main.py
