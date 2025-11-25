@@ -12,8 +12,8 @@ import os
 warnings.filterwarnings('ignore')
 
 # TELEGRAM AYARLARI - BUNLARI DOLDURUN
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN") 
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "YOUR_CHAT_ID")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", " ") 
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", " ")
 
 # Görselleştirme ayarları
 plt.style.use('default')
