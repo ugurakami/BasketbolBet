@@ -20,7 +20,7 @@ sns.set_palette("tab10")
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 
-# --- VERİ YÜKLEME VE TEMİZLİK (AYNEN KORUNDU) ---
+# --- VERİ YÜKLEME VE TEMİZLİK ---
 def log_environment_info():
     """Çevre değişkenlerini kontrol et"""
     print("🏀 Basketbol Fikstür Analiz ve Tahmin Programı")
@@ -50,23 +50,123 @@ def clean_data(df):
     return df
 
 df = clean_data(df)
-# --------------------------------------------------------------------------------
 
-# --- YENİ ZAMAN YÖNETİMİ FONKSİYONU (AYNEN KORUNDU) ---
+# --- EKSİK FONKSİYONLARI EKLE ---
+def analyze_prediction_accuracy_detailed(df, team_stats):
+    """Detaylı doğruluk analizi"""
+    completed = df.dropna(subset=['MS(Ev)', 'MS(Dep)'])
+    
+    if len(completed) < 10:
+        return 50, {}  # Varsayılan değer
+    
+    # Son 30 maçı analiz et
+    son_30 = completed.nlargest(30, 'Tarih')
+    dogru = 0
+    toplam = 0
+    
+    # Basit ve gelişmiş tahmin karşılaştırması
+    basit_dogru = 0
+    gelismis_dogru = 0
+    
+    for _, mac in son_30.iterrows():
+        ev = mac['Ev Sahibi']
+        dep = mac['Deplasman']
+        lig = mac['Lig']
+        gercek = mac['Kazanan']
+        
+        ev_stats = team_stats.get(ev, {})
+        dep_stats = team_stats.get(dep, {})
+        
+        if not ev_stats or not dep_stats:
+            continue
+            
+        toplam += 1
+        
+        # 1. BASİT TAHMİN (Sadece güç puanı)
+        basit_tahmin = ev if ev_stats.get('Güç_Puanı', 50) > dep_stats.get('Güç_Puanı', 50) else dep
+        if basit_tahmin == gercek:
+            basit_dogru += 1
+        
+        # 2. GELİŞMİŞ TAHMİN (Modelimiz)
+        # Ev avantajı
+        ev_avantaji = 3.2 if lig in ['Eurolig', 'Türkiye'] else (2.8 if lig != 'NBA' else 2.3)
+        
+        # Temel skorlar
+        ev_temel = (ev_stats.get('Ev_Ort_Skor', 0) * 0.7 + ev_stats.get('Dep_Ort_Skor', 0) * 0.3)
+        dep_temel = (dep_stats.get('Dep_Ort_Skor', 0) * 0.7 + dep_stats.get('Ev_Ort_Skor', 0) * 0.3)
+        
+        # Form etkisi
+        ev_form = (ev_stats.get('Form_Puani', 0) / 10) * 0.3
+        dep_form = (dep_stats.get('Form_Puani', 0) / 10) * 0.3
+        
+        # Final tahmin
+        ev_tahmin = ev_temel + ev_avantaji + ev_form
+        dep_tahmin = dep_temel + dep_form
+        
+        gelismis_tahmin = ev if ev_tahmin > dep_tahmin else dep
+        
+        if gelismis_tahmin == gercek:
+            gelismis_dogru += 1
+            dogru += 1
+    
+    dogruluk = (dogru / toplam) * 100 if toplam > 0 else 50
+    
+    # Lig bazlı analiz
+    lig_bazli = {}
+    for lig in completed['Lig'].unique():
+        lig_maclar = completed[completed['Lig'] == lig].tail(15)
+        lig_dogru = 0
+        lig_toplam = 0
+        
+        for _, mac in lig_maclar.iterrows():
+            ev_stats = team_stats.get(mac['Ev Sahibi'], {})
+            dep_stats = team_stats.get(mac['Deplasman'], {})
+            
+            if not ev_stats or not dep_stats:
+                continue
+                
+            # Basit tahmin
+            tahmin = mac['Ev Sahibi'] if ev_stats.get('Güç_Puanı', 50) > dep_stats.get('Güç_Puanı', 50) else mac['Deplasman']
+            if tahmin == mac['Kazanan']:
+                lig_dogru += 1
+            lig_toplam += 1
+        
+        if lig_toplam > 0:
+            lig_bazli[lig] = {
+                'dogru': lig_dogru, 
+                'toplam': lig_toplam,
+                'basit_dogru': lig_dogru  # Basit model için
+            }
+    
+    print(f"📊 Doğruluk Analizi: {dogru}/{toplam} (%{dogruluk:.1f})")
+    print(f"   Basit Model: {basit_dogru}/{toplam} (%{(basit_dogru/toplam)*100:.1f})")
+    print(f"   Gelişmiş Model: {gelismis_dogru}/{toplam} (%{(gelismis_dogru/toplam)*100:.1f})")
+    
+    return dogruluk, {
+        'dogru_tahmin': dogru,
+        'toplam_tahmin': toplam,
+        'lig_bazli': lig_bazli,
+        'gelismis_tahmin': gelismis_dogru,
+        'basit_tahmin': basit_dogru
+    }
 
+# --- ZAMAN YÖNETİMİ ---
 def get_analysis_periods(df):
-    """Bu haftanın kalanını ve Gelecek haftayı hesaplar."""
+    """
+    Bu haftanın kalanını (Şu andan Pazartesi 09:00'a) ve ardından
+    Gelecek haftayı (Pazartesi 09:00'dan sonraki 7 gün) hesaplar.
+    """
     now = datetime.now()
     periods = []
 
     # 1. Bitiş Tarihi: Önümüzdeki Pazartesi 09:00
     days_until_next_monday = (7 - now.weekday()) % 7
     if days_until_next_monday == 0 and now.hour >= 9:
-        days_until_next_monday = 7 
+        days_until_next_monday = 7 # Eğer Pazartesi 09:00'dan sonra ise, sonraki Pazartesi'yi al
     
     end_of_current_period = (now + timedelta(days=days_until_next_monday)).replace(hour=9, minute=0, second=0, microsecond=0)
 
-    # AŞAMA 1: Bu Haftanın Kalanı
+    # AŞAMA 1: Bu Haftanın Kalanı (Şu andan Pazartesi 09:00'a)
     if end_of_current_period > now:
         periods.append({
             'name': "BU HAFTANIN KALANI",
@@ -75,7 +175,7 @@ def get_analysis_periods(df):
         })
         print(f"1. Tahmin: {periods[0]['name']} ({periods[0]['start_date'].strftime('%d.%m %H:%M')} - {periods[0]['end_date'].strftime('%d.%m %H:%M')})")
 
-    # AŞAMA 2: Gelecek Hafta
+    # AŞAMA 2: Gelecek Hafta (Pazartesi 09:00'dan sonraki 7 gün)
     start_of_next_week = end_of_current_period
     end_of_next_week = start_of_next_week + timedelta(days=7)
     
@@ -87,17 +187,15 @@ def get_analysis_periods(df):
     print(f"2. Tahmin: {periods[-1]['name']} ({periods[-1]['start_date'].strftime('%d.%m %H:%M')} - {periods[-1]['end_date'].strftime('%d.%m %H:%M')})")
     
     return periods
-    
-# --------------------------------------------------------------------------------
 
-# --- İSTATİSTİK VE GÜÇ HESAPLAMALARI (PARAMETRE İYİLEŞTİRMESİ) ---
-
+# --- İSTATİSTİK VE GÜÇ HESAPLAMALARI ---
 def calculate_advanced_team_stats(df):
     """Gelişmiş takım istatistikleri ve lig ortalamaları"""
     completed = df.dropna(subset=['MS(Ev)', 'MS(Dep)'])
     team_stats = {}
     lig_performans = {}
     
+    # Tüm liglerin genel ortalamasını hesapla
     genel_ort_skor = completed['Toplam_Skor'].mean() if len(completed) > 0 else 180
     genel_ev_skor = completed['MS(Ev)'].mean() if len(completed) > 0 else 90
     genel_dep_skor = completed['MS(Dep)'].mean() if len(completed) > 0 else 90
@@ -108,25 +206,29 @@ def calculate_advanced_team_stats(df):
         lig_ort_skor = lig_maclar['Toplam_Skor'].mean()
         lig_performans[lig] = {
             'ort_skor': lig_ort_skor,
-            'savunma_gucu_ort': max(30, 100 - (lig_ort_skor / 3)), 
-            'hiz_katsayisi': lig_ort_skor / genel_ort_skor, 
+            'savunma_gucu_ort': max(30, 100 - (lig_ort_skor / 3)),
+            'hiz_katsayisi': lig_ort_skor / genel_ort_skor,
             'ev_ort': lig_maclar['MS(Ev)'].mean(),
             'dep_ort': lig_maclar['MS(Dep)'].mean(),
         }
     
+    # Takım istatistiklerini hesapla
     for takim in set(list(completed['Ev Sahibi']) + list(completed['Deplasman'])):
         ev_maclar = completed[completed['Ev Sahibi'] == takim]
         dep_maclar = completed[completed['Deplasman'] == takim]
+        
         tum_maclar = pd.concat([ev_maclar, dep_maclar]).sort_values('Tarih')
         
+        # Ana ligi belirle
         takim_ligleri = list(ev_maclar['Lig']) + list(dep_maclar['Lig'])
         ana_lig = max(set(takim_ligleri), key=takim_ligleri.count) if takim_ligleri else 'Diğer'
         lig_stats = lig_performans.get(ana_lig, {})
         
+        # Dinamik varsayılan değerler
         LIG_EV_ORT = lig_stats.get('ev_ort', genel_ev_skor)
         LIG_DEP_ORT = lig_stats.get('dep_ort', genel_dep_skor)
         
-        # Dinamik varsayılan skorlar
+        # Temel istatistikler
         ev_ort_skor = ev_maclar['MS(Ev)'].mean() if len(ev_maclar) > 2 else LIG_EV_ORT
         dep_ort_skor = dep_maclar['MS(Dep)'].mean() if len(dep_maclar) > 2 else LIG_DEP_ORT
         ev_yenen_ort_skor = ev_maclar['MS(Dep)'].mean() if len(ev_maclar) > 2 else LIG_DEP_ORT
@@ -136,17 +238,19 @@ def calculate_advanced_team_stats(df):
         son_10_mac = tum_maclar.tail(10)
         form_puani = 0
         for i, (_, mac) in enumerate(son_10_mac.iterrows()):
-            mac_agirlik = 1.0 + (i * 0.1) 
+            mac_agirlik = 1.0 + (i * 0.1)
             if mac['Kazanan'] == takim:
                 form_puani += 3 * mac_agirlik
             elif mac['Kazanan'] == 'Berabere':
                 form_puani += 1 * mac_agirlik
         
-        # Güç hesaplamaları
+        # Güç hesaplamaları - OPTİMİZE EDİLDİ
         hucum_gucu = (ev_ort_skor / LIG_EV_ORT * 50 * 0.6 + dep_ort_skor / LIG_DEP_ORT * 50 * 0.4)
+        
         yenen_ort = (ev_yenen_ort_skor + dep_yenen_ort_skor) / 2
         savunma_gucu = max(10, 100 - (yenen_ort / (genel_ort_skor / 2) * 50))
         
+        # OPTİMİZE GÜÇ PUANI - DAHA DENGELİ
         team_stats[takim] = {
             'Toplam_Maç': len(tum_maclar),
             'Ev_Ort_Skor': ev_ort_skor,
@@ -156,76 +260,18 @@ def calculate_advanced_team_stats(df):
             'Form_Puani': form_puani,
             'Lig_Katsayisi': lig_stats.get('hiz_katsayisi', 1.0),
             'Ana_Lig': ana_lig,
-            
-            # ⚠️ İyileştirme 2: Daha dengeli Güç Puanı ağırlıkları (0.40/0.40/0.20)
-            'Güç_Puanı': (hucum_gucu * 0.40 + savunma_gucu * 0.40 + form_puani * 0.20) 
+            # OPTİMİZE GÜÇ PUANI: Hücum ve Savunma daha ağırlıklı
+            'Güç_Puanı': (hucum_gucu * 0.40 + savunma_gucu * 0.40 + form_puani * 0.20)
         }
     
     return team_stats, lig_performans
 
-# --------------------------------------------------------------------------------
-
-# --- EKSİK FONKSİYONUN EKLENMESİ (İyileştirme 1) ---
-
-def analyze_prediction_accuracy_detailed(df, team_stats):
-    """Basit doğruluk analizi - Güç Puanı ile son 30 maç üzerinden doğruluk hesaplar."""
-    completed = df.dropna(subset=['MS(Ev)', 'MS(Dep)'])
-    
-    if len(completed) < 10:
-        return 50, {'dogru_tahmin': 0, 'toplam_tahmin': 0, 'lig_bazli': {}, 'gelismis_tahmin': 0}
-    
-    # Son 30 maçı analiz et
-    son_maclar = completed.nlargest(30, 'Tarih')
-    dogru_tahmin = 0
-    toplam_tahmin = 0
-    analiz_detay = {'lig_bazli': {}}
-    
-    for _, mac in son_maclar.iterrows():
-        ev = mac['Ev Sahibi']
-        dep = mac['Deplasman']
-        gercek = mac['Kazanan']
-        lig = mac['Lig']
-        
-        ev_guc = team_stats.get(ev, {}).get('Güç_Puanı', 50)
-        dep_guc = team_stats.get(dep, {}).get('Güç_Puanı', 50)
-        
-        # Basit güç tahmini: Yüksek Güç Puanı olan takım kazanır.
-        tahmin = ev if ev_guc > dep_guc else dep
-        
-        # Lig bazlı analizi güncelle
-        if lig not in analiz_detay['lig_bazli']:
-            analiz_detay['lig_bazli'][lig] = {'dogru': 0, 'toplam': 0}
-            
-        if tahmin == gercek:
-            dogru_tahmin += 1
-            analiz_detay['lig_bazli'][lig]['dogru'] += 1
-            
-        toplam_tahmin += 1
-        analiz_detay['lig_bazli'][lig]['toplam'] += 1
-    
-    dogruluk_yuzdesi = (dogru_tahmin / toplam_tahmin) * 100 if toplam_tahmin > 0 else 50
-    
-    print(f"\n📊 DETAYLI DOĞRULUK ANALİZİ (Güç Puanı Bazlı): %{dogruluk_yuzdesi:.1f}")
-    
-    # Gerekli detayları döndür
-    return dogruluk_yuzdesi, {
-        'dogru_tahmin': dogru_tahmin,
-        'toplam_tahmin': toplam_tahmin,
-        'lig_bazli': analiz_detay['lig_bazli'],
-        'gelismis_tahmin': dogru_tahmin # Basit model için aynı
-    }
-
-# --------------------------------------------------------------------------------
-
-# --- RAKİP ANALİZİ (AYNEN KORUNDU) ---
-
+# --- RAKİP ANALİZİ ---
 def calculate_opponent_strength(df, team_stats):
-    """Rakiplerin gücünü analiz et"""
     completed = df.dropna(subset=['MS(Ev)', 'MS(Dep)'])
     opponent_stats = {}
     
     for takim in set(list(completed['Ev Sahibi']) + list(completed['Deplasman'])):
-        # ... (iç mantık önceki kodunuzdaki gibi kalır)
         takim_maclar = completed[
             (completed['Ev Sahibi'] == takim) | 
             (completed['Deplasman'] == takim)
@@ -233,6 +279,7 @@ def calculate_opponent_strength(df, team_stats):
         
         rakip_guc_toplam = 0
         rakip_sayisi = 0
+        zor_mac_sayisi = 0
         
         for _, mac in takim_maclar.iterrows():
             if mac['Ev Sahibi'] == takim:
@@ -243,16 +290,24 @@ def calculate_opponent_strength(df, team_stats):
             rakip_guc = team_stats.get(rakip, {}).get('Güç_Puanı', 50)
             rakip_guc_toplam += rakip_guc
             rakip_sayisi += 1
+            
+            if rakip_guc > 65:
+                zor_mac_sayisi += 1
         
         ortalama_rakip_gucu = rakip_guc_toplam / rakip_sayisi if rakip_sayisi > 0 else 50
         
+        # Zorluk Derecesi ayarları
         if ortalama_rakip_gucu > 70:
+            zorluk_derecesi = "ÇOK ZOR"
             zorluk_puani = 1.3
         elif ortalama_rakip_gucu > 65:
+            zorluk_derecesi = "ZOR"
             zorluk_puani = 1.15
         elif ortalama_rakip_gucu > 55:
+            zorluk_derecesi = "ORTA"
             zorluk_puani = 1.0
         else:
+            zorluk_derecesi = "KOLAY"
             zorluk_puani = 0.85
         
         opponent_stats[takim] = {
@@ -261,12 +316,9 @@ def calculate_opponent_strength(df, team_stats):
         }
     return opponent_stats
 
-# --------------------------------------------------------------------------------
-
-# --- TAHMİN MOTORU (İYİLEŞTİRMELER 2 VE 3 UYGULANDI) ---
-
+# --- OPTİMİZE TAHMİN MOTORU ---
 def enhanced_predict_matches(df, team_stats, lig_performans, opponent_stats, period):
-    """Geliştirilmiş tahmin motoru, dinamik periyotlar için"""
+    """OPTİMİZE tahmin motoru"""
     
     start_date = period['start_date']
     end_date = period['end_date']
@@ -291,52 +343,44 @@ def enhanced_predict_matches(df, team_stats, lig_performans, opponent_stats, per
         
         ev_stats = team_stats.get(ev_takim, {})
         dep_stats = team_stats.get(dep_takim, {})
+        lig_stats = lig_performans.get(lig, {})
         ev_opponent_zorluk = opponent_stats.get(ev_takim, {}).get('Zorluk_Puanı', 1.0)
         dep_opponent_zorluk = opponent_stats.get(dep_takim, {}).get('Zorluk_Puanı', 1.0)
         
         if not ev_stats or not dep_stats:
             continue
         
-        lig_hiz = lig_performans.get(lig, {}).get('hiz_katsayisi', 1.0)
+        # Lig ayarlamaları
+        lig_hiz = lig_stats.get('hiz_katsayisi', 1.0)
         
-        # ⚠️ İyileştirme 2: Daha dengeli Ev Avantajı
+        # OPTİMİZE EV AVANTAJI - DAHA DENGELİ
         ev_avantaji = 3.2 if lig in ['Eurolig', 'Türkiye'] else (2.8 if lig != 'NBA' else 2.3)
         
-        # --- SKOR TAHMİNİ (İyileştirme 3: Sadeleştirildi) ---
+        # BASİTLEŞTİRİLMİŞ SKOR TAHMİNİ
+        ev_temel = (ev_stats['Ev_Ort_Skor'] * 0.7 + ev_stats['Dep_Ort_Skor'] * 0.3)
+        dep_temel = (dep_stats['Dep_Ort_Skor'] * 0.7 + dep_stats['Ev_Ort_Skor'] * 0.3)
         
-        # Evin skorunu belirleyen temel faktörler
-        ev_temel_skor = (ev_stats['Ev_Ort_Skor'] * 0.7 + ev_stats['Dep_Ort_Skor'] * 0.3)
+        # Form etkisi - AZALTILDI
+        ev_form = (ev_stats['Form_Puani'] / 10) * 0.3
+        dep_form = (dep_stats['Form_Puani'] / 10) * 0.3
         
-        # Deplasmanın skorunu belirleyen temel faktörler
-        dep_temel_skor = (dep_stats['Dep_Ort_Skor'] * 0.7 + dep_stats['Ev_Ort_Skor'] * 0.3)
+        # SADE SKOR TAHMİNİ
+        ev_tahmin_skor = (ev_temel + ev_avantaji + ev_form) * lig_hiz
+        dep_tahmin_skor = (dep_temel + dep_form) * lig_hiz
         
-        # Form farkı etkisini ekle
-        form_farki_etkisi = (ev_stats['Form_Puani'] - dep_stats['Form_Puani']) * 0.1
-        
-        # Final Tahmin Skoru (Basitleştirilmiş)
-        ev_tahmin_skor = (
-            ev_temel_skor + 
-            ev_avantaji + 
-            form_farki_etkisi
-        ) * lig_hiz
-        
-        dep_tahmin_skor = (
-            dep_temel_skor - 
-            form_farki_etkisi # Ters etki
-        ) * lig_hiz
-        
-        # --- OLASILIK HESAPLAMASI (AYNEN KORUNDU) ---
-        
+        # OPTİMİZE OLASILIK HESABI
         guc_farki = ev_stats['Güç_Puanı'] - dep_stats['Güç_Puanı']
         skor_farki = ev_tahmin_skor - dep_tahmin_skor
         form_farki = ev_stats['Form_Puani'] - dep_stats['Form_Puani']
         
-        final_olasilik = 50 + (guc_farki * 0.5) + (skor_farki * 0.3) + (form_farki * 0.2)
+        # DAHA DENGELİ OLASILIK
+        final_olasilik = 50 + (guc_farki * 0.6) + (skor_farki * 0.2) + (form_farki * 0.1)
         
         # Zorluk çarpanı
         final_olasilik *= (dep_opponent_zorluk / ev_opponent_zorluk)
         
-        final_olasilik = min(95, max(5, final_olasilik))
+        # Sınırlama
+        final_olasilik = min(92, max(8, final_olasilik))
         
         if final_olasilik >= 50:
             kazanan = ev_takim
@@ -345,8 +389,9 @@ def enhanced_predict_matches(df, team_stats, lig_performans, opponent_stats, per
             kazanan = dep_takim
             kazanma_olasiligi = 100 - final_olasilik
         
-        tahmin_ev_skor = max(60, min(140, round(ev_tahmin_skor)))
-        tahmin_dep_skor = max(60, min(140, round(dep_tahmin_skor)))
+        # Skorları yuvarla ve kısıtla
+        tahmin_ev_skor = max(65, min(135, round(ev_tahmin_skor)))
+        tahmin_dep_skor = max(65, min(135, round(dep_tahmin_skor)))
         
         tahmin = {
             'Tarih': mac['Tarih'],
@@ -366,11 +411,8 @@ def enhanced_predict_matches(df, team_stats, lig_performans, opponent_stats, per
         tahminler.append(tahmin)
     
     return tahminler, start_date, end_date
-    
-# --------------------------------------------------------------------------------
 
-# --- TELEGRAM VE GÖRSEL RAPOR İŞLEMLERİ (AYNEN KORUNDU) ---
-
+# --- TELEGRAM İŞLEMLERİ ---
 def send_telegram_photo(file_path, caption=""):
     """Telegram'a fotoğraf gönder"""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
@@ -397,12 +439,9 @@ def send_telegram_photo(file_path, caption=""):
         print(f"❌ Telegram bağlantı hatası: {e}")
         return False
 
-
+# --- GÖRSEL RAPOR (AYNEN KORUNDU) ---
 def create_visual_report(all_tahminler, all_periods, dogruluk, detay_analiz, file_name='tahmin_raporu.png'):
-    """Detaylı tahminleri ve lig analizlerini içeren görsel rapor oluşturur (PNG)"""
-    
-    # Global team_stats'ı kullan
-    global team_stats 
+    """Detaylı tahminleri ve lig analizlerini içeren görsel rapor oluşturur"""
     
     fig = plt.figure(figsize=(12, 16), facecolor='white')
     gs = GridSpec(6, 2, figure=fig, hspace=0.4, wspace=0.2)
@@ -418,49 +457,30 @@ def create_visual_report(all_tahminler, all_periods, dogruluk, detay_analiz, fil
     ax_title.text(0.02, 0.65, f"⏰ Tahmin Periyodu: {all_periods[0]['start_date'].strftime('%d.%m %H:%M')} - {all_periods[-1]['end_date'].strftime('%d.%m %H:%M')}", 
                   fontsize=14, color='gray')
     
-    # Model Doğruluğu
-    dogru_tahmin = detay_analiz.get('dogru_tahmin', 0)
-    toplam_tahmin = detay_analiz.get('toplam_tahmin', 0)
-    
-    ax_title.text(0.02, 0.4, f"📊 Model Doğruluğu (Son {toplam_tahmin} Maç):", fontsize=16, fontweight='bold')
-    ax_title.text(0.02, 0.1, f"  %{dogruluk:.1f} ({dogru_tahmin}/{toplam_tahmin})", 
+    ax_title.text(0.02, 0.4, f"📊 Model Doğruluğu (Son 30 Maç):", fontsize=16, fontweight='bold')
+    ax_title.text(0.02, 0.1, f"  %{dogruluk:.1f} ({detay_analiz.get('dogru_tahmin', 0)}/{detay_analiz.get('toplam_tahmin', 0)})", 
                   fontsize=22, color='green' if dogruluk > 55 else 'red', fontweight='bold')
     ax_title.text(0.5, 0.4, f"📈 Tahmin Edilen Toplam Maç:", fontsize=16, fontweight='bold')
     ax_title.text(0.5, 0.1, f"  {tahmin_sayisi}", 
                   fontsize=22, color='#ff7f0e', fontweight='bold')
 
-
     # 2. Lig Bazlı Doğruluk Analizi
     ax_acc = fig.add_subplot(gs[1, :])
-    ax_acc.set_title("🏆 Lig Bazlı Doğruluk Analizi (Güç Puanı Bazlı)", fontsize=16, fontweight='bold')
+    ax_acc.set_title("🏆 Lig Bazlı Doğruluk Analizi", fontsize=16, fontweight='bold')
     ax_acc.axis('off')
     
     lig_data = detay_analiz.get('lig_bazli', {})
-    table_data = []
     
-    table_data.append(["LİG", "DOĞRULUK", "MAÇ SAYISI", "ORT. GÜÇ (H/S)"])
+    table_data = []
+    table_data.append(["LİG", "DOĞRULUK", "MAÇ SAYISI"])
     
     for lig, stats in lig_data.items():
         if stats['toplam'] > 0:
             lig_dogruluk = (stats['dogru'] / stats['toplam']) * 100
-            
-            # Lig takımlarının ortalama güçlerini hesapla
-            lig_takimlari = df[(df['Lig'] == lig) & df['MS(Ev)'].notna()]['Ev Sahibi'].unique()
-            hucum_guc_list = [team_stats[t].get('Hucum_Gucu', 50) for t in lig_takimlari if t in team_stats]
-            savunma_guc_list = [team_stats[t].get('Savunma_Gucu', 50) for t in lig_takimlari if t in team_stats]
-            
-            lig_hg = np.mean(hucum_guc_list) if hucum_guc_list else 50
-            lig_sg = np.mean(savunma_guc_list) if savunma_guc_list else 50
-            
-            table_data.append([
-                lig, 
-                f"%{lig_dogruluk:.1f}", 
-                str(stats['toplam']),
-                f"H:{lig_hg:.0f} / S:{lig_sg:.0f}"
-            ])
+            table_data.append([lig, f"%{lig_dogruluk:.1f}", str(stats['toplam'])])
 
     if len(table_data) > 1:
-        table = ax_acc.table(cellText=table_data, loc='center', cellLoc='center', colWidths=[0.3, 0.2, 0.2, 0.3])
+        table = ax_acc.table(cellText=table_data, loc='center', cellLoc='center', colWidths=[0.4, 0.3, 0.3])
         table.auto_set_font_size(False)
         table.set_fontsize(10)
         table.scale(1.0, 1.5)
@@ -469,14 +489,14 @@ def create_visual_report(all_tahminler, all_periods, dogruluk, detay_analiz, fil
                 cell.set_facecolor('#d9e5f5')
                 cell.set_fontsize(12)
 
-
-    # 3. Tahmin Detayları (Aşamalar ve Ligler)
+    # 3. Tahmin Detayları
     row_start = 2
     for period_idx, tahmin_list in enumerate(all_tahminler):
         if not tahmin_list:
             continue
             
         period = all_periods[period_idx]
+        
         tahmin_df = pd.DataFrame(tahmin_list)
         
         ax = fig.add_subplot(gs[row_start + period_idx * 2, :])
@@ -486,25 +506,25 @@ def create_visual_report(all_tahminler, all_periods, dogruluk, detay_analiz, fil
                 fontsize=18, fontweight='bold', color='darkred')
         
         final_table_data = []
-        final_table_data.append(["Tarih", "Maç", "Tahmin Skor", "Kazanan", "Olasılık", "Fark (G/F)"])
+        final_table_data.append(["Tarih", "Maç", "Tahmin Skor", "Kazanan", "Olasılık"])
         
-        max_rows = 15
+        max_rows = 12
         
         for i, mac in tahmin_df.sort_values(by='Tarih').head(max_rows).iterrows():
             tarih = mac['Tarih'].strftime('%a %H:%M')
-            mac_isim = f"{mac['Ev_Sahibi'][:12]} vs {mac['Deplasman'][:12]} ({mac['Lig'][:4]})"
+            mac_isim = f"{mac['Ev_Sahibi'][:12]} vs {mac['Deplasman'][:12]}"
             skor = f"{mac['Tahmin_Ev_Skor']}-{mac['Tahmin_Dep_Skor']}"
-            kazanan = mac['Tahmin_Kazanan'][:15]
+            kazanan = mac['Tahmin_Kazanan'][:12]
             olasilik = f"%{mac['Kazanma_Olasiligi']}"
-            fark = f"G:{mac['Güç_Farkı']} / F:{mac['Form_Farkı']}"
             
-            final_table_data.append([tarih, mac_isim, skor, kazanan, olasilik, fark])
+            final_table_data.append([tarih, mac_isim, skor, kazanan, olasilik])
 
         table_ax = fig.add_subplot(gs[row_start + period_idx * 2 + 1, :])
         table_ax.axis('off')
         
         if len(final_table_data) > 1:
-            table = table_ax.table(cellText=final_table_data, loc='center', cellLoc='center', colWidths=[0.1, 0.3, 0.15, 0.2, 0.1, 0.15])
+            table = table_ax.table(cellText=final_table_data, loc='center', cellLoc='center', 
+                                 colWidths=[0.12, 0.35, 0.15, 0.2, 0.1])
             table.auto_set_font_size(False)
             table.set_fontsize(8)
             table.scale(1.0, 1.2)
@@ -514,26 +534,22 @@ def create_visual_report(all_tahminler, all_periods, dogruluk, detay_analiz, fil
                     cell.set_facecolor('#d9e5f5')
                     cell.set_fontsize(9)
         else:
-            table_ax.text(0.5, 0.5, "Bu periyotta tahmin edilecek maç bulunamadı.", ha='center', va='center', fontsize=12)
-
+            table_ax.text(0.5, 0.5, "Bu periyotta tahmin edilecek maç bulunamadı.", 
+                         ha='center', va='center', fontsize=12)
     
     # Son bilgi
     ax_footer = fig.add_subplot(gs[-1, :])
     ax_footer.axis('off')
     ax_footer.text(0.02, 0.5, f"Rapor Oluşturma Zamanı: {datetime.now().strftime('%d.%m.%Y %H:%M')}", fontsize=10, color='gray')
-    ax_footer.text(0.02, 0.1, f"Analiz Kriterleri: Güç Puanı, Ağırlıklı Form, Savunma/Hücum Dengesi, Rakip Zorluğu.", fontsize=10, color='gray')
-
+    ax_footer.text(0.02, 0.1, "Analiz Kriterleri: Güç Puanı, Form, Savunma/Hücum Dengesi, Rakip Zorluğu", fontsize=10, color='gray')
     
-    plt.tight_layout(rect=[0, 0, 1, 0.98]) 
+    plt.tight_layout(rect=[0, 0, 1, 0.98])
     plt.savefig(file_name, bbox_inches='tight', dpi=150)
     plt.close(fig)
     print(f"✅ Görsel rapor ('{file_name}') başarıyla oluşturuldu.")
     return file_name
 
-# --------------------------------------------------------------------------------
-
-# --- ANA PROGRAM (AYNEN KORUNDU) ---
-
+# --- ANA PROGRAM ---
 def main():
     global df, team_stats
     
@@ -561,7 +577,7 @@ def main():
     # 3. Tahmin Periyotlarını Al
     periods = get_analysis_periods(df)
     
-    # 4. Tahmin Yap (Her periyot için ayrı ayrı)
+    # 4. Tahmin Yap
     print("\n🔮 Tahminler başlıyor...")
     all_tahminler = []
     
@@ -571,7 +587,7 @@ def main():
             all_tahminler.append(tahminler)
             print(f"  ✅ {period['name']} için {len(tahminler)} maç tahmin edildi")
     
-    flat_tahminler = [t for sublist in all_tahminler for t in sublist] # Tüm tahminleri tek listeye topla
+    flat_tahminler = [t for sublist in all_tahminler for t in sublist]
 
     if flat_tahminler:
         # 5. Görsel Rapor Oluştur ve Gönder
@@ -583,7 +599,7 @@ def main():
         
         caption = f"<b>🏀 HAFTALIK BASKETBOL RAPORU</b>\n\n"\
                   f"⏰ {periods[0]['start_date'].strftime('%d.%m %H:%M')} - {periods[-1]['end_date'].strftime('%d.%m %H:%M')}\n\n"\
-                  f"📊 Model Doğruluğu (Son 30): <b>%{dogruluk:.1f}</b>\n"\
+                  f"📊 Model Doğruluğu: <b>%{dogruluk:.1f}</b>\n"\
                   f"📈 Toplam Tahmin: <b>{len(flat_tahminler)}</b> maç\n"
 
         send_telegram_photo(rapor_dosya_adi, caption=caption)
