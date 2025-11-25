@@ -26,11 +26,6 @@ def log_environment_info():
     print(f"📅 Çalışma Zamanı: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
     print(f"🔐 Telegram Bot: {'✅ Ayarlı' if TELEGRAM_BOT_TOKEN else '❌ Ayarlı Değil'}")
     print(f"💬 Telegram Chat: {'✅ Ayarlı' if TELEGRAM_CHAT_ID else '❌ Ayarlı Değil'}")
-    
-    # Secrets kontrolü
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("⚠️  UYARI: Telegram ayarları bulunamadı!")
-        print("   GitHub Secrets'da TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID ayarlayın")
 
 # Veriyi yükle
 try:
@@ -215,7 +210,6 @@ def enhanced_predict_matches(df, team_stats, lig_performans, opponent_stats):
     """Geliştirilmiş tahmin motoru"""
     gelecek_maclar, start_date, end_date = get_next_week_matches(df)
     
-    # HATA DÜZELTME: gelecek_maclar değişken ismi tutarlı olmalı
     if len(gelecek_maclar) == 0:
         print("❌ Önümüzdeki hafta için maç bulunamadı")
         return [], start_date, end_date
@@ -344,14 +338,54 @@ def send_telegram_message(message):
         print(f"❌ Telegram bağlantı hatası: {e}")
         return False
 
-def create_telegram_prediction_report(tahminler, start_date, end_date):
-    """Telegram için tahmin raporu oluştur"""
-    if not tahminler:
-        return "📅 Önümüzdeki hafta için maç bulunamadı."
+def split_telegram_message(long_message, max_length=4096):
+    """Uzun mesajı parçalara böl"""
+    if len(long_message) <= max_length:
+        return [long_message]
     
-    mesaj = f"<b>🏀 HAFTALIK BASKETBOL TAHMİNLERİ</b>\n"
-    mesaj += f"<i>⏰ {start_date.strftime('%d.%m %H:%M')} - {end_date.strftime('%d.%m %H:%M')}</i>\n"
-    mesaj += "═" * 35 + "\n\n"
+    messages = []
+    current_message = ""
+    
+    for line in long_message.split('\n'):
+        if len(current_message + line + '\n') > max_length:
+            if current_message:
+                messages.append(current_message.strip())
+                current_message = line + '\n'
+            else:
+                # Tek bir satır max_length'den uzunsa, kelimelere böl
+                words = line.split(' ')
+                current_line = ""
+                for word in words:
+                    if len(current_line + word + ' ') > max_length:
+                        messages.append(current_line.strip())
+                        current_line = word + ' '
+                    else:
+                        current_line += word + ' '
+                if current_line:
+                    messages.append(current_line.strip())
+        else:
+            current_message += line + '\n'
+    
+    if current_message:
+        messages.append(current_message.strip())
+    
+    return messages
+
+def create_telegram_prediction_report(tahminler, start_date, end_date, dogruluk):
+    """Telegram için tahmin raporu oluştur - KISA ve ÖZ"""
+    if not tahminler:
+        return ["📅 Önümüzdeki hafta için maç bulunamadı."]
+    
+    # Mesajı parçalara böl
+    messages = []
+    
+    # 1. Parça: Başlık ve özet
+    mesaj_baslik = f"<b>🏀 HAFTALIK TAHMİNLER</b>\n"
+    mesaj_baslik += f"<i>⏰ {start_date.strftime('%d.%m %H:%M')} - {end_date.strftime('%d.%m %H:%M')}</i>\n"
+    mesaj_baslik += f"📊 Model Doğruluğu: <b>%{dogruluk:.1f}</b>\n"
+    mesaj_baslik += "═" * 30 + "\n\n"
+    
+    messages.append(mesaj_baslik)
     
     # Tahminleri liglere göre grupla
     ligler = {}
@@ -361,50 +395,74 @@ def create_telegram_prediction_report(tahminler, start_date, end_date):
             ligler[lig] = []
         ligler[lig].append(tahmin)
     
+    # Her lig için ayrı mesaj
     for lig, maclar in ligler.items():
-        mesaj += f"<b>🏆 {lig}</b>\n"
+        mesaj_lig = f"<b>🏆 {lig}</b>\n"
         
-        for mac in maclar:
+        for i, mac in enumerate(maclar):
+            if i >= 8:  # Her ligde max 8 maç göster
+                mesaj_lig += f"• ... ve {len(maclar) - 8} maç daha\n"
+                break
+                
             tarih = mac['Tarih'].strftime('%a %H:%M') if not pd.isna(mac['Tarih']) else "TBA"
             ev = mac['Ev_Sahibi']
             dep = mac['Deplasman']
             olasilik = mac['Kazanma_Olasiligi']
-            toplam = mac['Tahmin_Toplam_Skor']
+            
+            # Kısa format
+            if len(ev) > 15:
+                ev = ev[:12] + "..."
+            if len(dep) > 15:
+                dep = dep[:12] + "..."
             
             # Kazananı vurgula
             if mac['Tahmin_Kazanan'] == ev:
-                skor_gosterim = f"<b>{mac['Tahmin_Ev_Skor']}</b>-{mac['Tahmin_Dep_Skor']}"
-                kazanan_gosterim = f"🏠 {ev}"
+                skor_gosterim = f"<b>{mac['Tahmin_Ev_Skor']}-{mac['Tahmin_Dep_Skor']}</b>"
+                kazanan_emoji = "🏠"
             else:
                 skor_gosterim = f"{mac['Tahmin_Ev_Skor']}-<b>{mac['Tahmin_Dep_Skor']}</b>"
-                kazanan_gosterim = f"✈️ {dep}"
+                kazanan_emoji = "✈️"
             
-            mesaj += f"• {tarih}\n"
-            mesaj += f"  {ev} vs {dep}\n"
-            mesaj += f"  🎯 {skor_gosterim} | 📊 %{olasilik}\n"
-            mesaj += f"  ✅ {kazanan_gosterim}\n\n"
+            mesaj_lig += f"• {tarih}\n"
+            mesaj_lig += f"  {kazanan_emoji} {ev} vs {dep}\n"
+            mesaj_lig += f"  🎯 {skor_gosterim} | 📊 %{olasilik}\n\n"
+        
+        messages.append(mesaj_lig)
     
-    mesaj += f"⏰ Tahmin Zamanı: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
-    mesaj += "🔮 <i>Analiz: Form + Güç + Rakip Zorluğu</i>"
+    # Son parça: Özet
+    mesaj_son = f"⏰ Tahmin: {datetime.now().strftime('%d.%m %H:%M')}\n"
+    mesaj_son += f"📈 Toplam {len(tahminler)} maç tahmini\n"
+    mesaj_son += "🔮 <i>Analiz: Form + Güç + Rakip Zorluğu</i>"
     
-    return mesaj
+    messages.append(mesaj_son)
+    
+    return messages
 
-def analyze_prediction_accuracy(df, team_stats):
-    """Geçmiş tahmin doğruluğunu analiz et"""
+def analyze_prediction_accuracy_detailed(df, team_stats):
+    """DETAYLI tahmin doğruluğunu analiz et"""
     completed = df.dropna(subset=['MS(Ev)', 'MS(Dep)'])
     
     if len(completed) < 10:
         print("⚠️  Doğruluk analizi için yeterli maç yok")
-        return 0
+        return 0, {}
     
     # Son 30 maçı analiz et
     son_maclar = completed.nlargest(30, 'Tarih')
     dogru_tahmin = 0
     toplam_tahmin = 0
     
+    # Detaylı analiz
+    analiz_detay = {
+        'basit_guc': 0,
+        'gelismis_tahmin': 0,
+        'yuksek_olasilik': 0,
+        'lig_bazli': {}
+    }
+    
     for _, mac in son_maclar.iterrows():
         ev_takim = mac['Ev Sahibi']
         dep_takim = mac['Deplasman']
+        lig = mac['Lig']
         gercek_kazanan = mac['Kazanan']
         
         ev_stats = team_stats.get(ev_takim, {})
@@ -413,28 +471,60 @@ def analyze_prediction_accuracy(df, team_stats):
         if not ev_stats or not dep_stats:
             continue
         
-        # Basit tahmin (güç puanına göre)
+        # 1. BASİT TAHMİN (Sadece güç puanı)
         if ev_stats['Güç_Puanı'] > dep_stats['Güç_Puanı']:
-            tahmin_kazanan = ev_takim
+            basit_tahmin = ev_takim
         else:
-            tahmin_kazanan = dep_takim
+            basit_tahmin = dep_takim
         
-        if tahmin_kazanan == gercek_kazanan:
+        # 2. GELİŞMİŞ TAHMİN (Tahmin motoru ile aynı mantık)
+        ev_avantaji = 3.0 if lig != 'NBA' else 2.5
+        ev_temel = (ev_stats['Ev_Ort_Skor'] * 0.7 + ev_stats['Dep_Ort_Skor'] * 0.3) + ev_avantaji
+        dep_temel = (dep_stats['Dep_Ort_Skor'] * 0.7 + dep_stats['Ev_Ort_Skor'] * 0.3)
+        
+        gelismis_tahmin = ev_takim if ev_temel > dep_temel else dep_takim
+        
+        # Hangi tahmin doğru?
+        if basit_tahmin == gercek_kazanan:
+            analiz_detay['basit_guc'] += 1
+        
+        if gelismis_tahmin == gercek_kazanan:
+            analiz_detay['gelismis_tahmin'] += 1
             dogru_tahmin += 1
+        
         toplam_tahmin += 1
+        
+        # Lig bazlı analiz
+        if lig not in analiz_detay['lig_bazli']:
+            analiz_detay['lig_bazli'][lig] = {'dogru': 0, 'toplam': 0}
+        
+        if gelismis_tahmin == gercek_kazanan:
+            analiz_detay['lig_bazli'][lig]['dogru'] += 1
+        analiz_detay['lig_bazli'][lig]['toplam'] += 1
     
     if toplam_tahmin > 0:
         dogruluk_yuzdesi = (dogru_tahmin / toplam_tahmin) * 100
-        print(f"📊 Son {toplam_tahmin} maç tahmin doğruluğu: %{dogruluk_yuzdesi:.1f}")
+        basit_dogruluk = (analiz_detay['basit_guc'] / toplam_tahmin) * 100
         
-        if dogruluk_yuzdesi < 55:
-            print("⚠️  Tahmin doğruluğu düşük, model ayarları gözden geçirilmeli")
-        elif dogruluk_yuzdesi > 65:
-            print("✅ Tahmin doğruluğu iyi seviyede")
+        print(f"\n📊 DETAYLI DOĞRULUK ANALİZİ:")
+        print(f"   • Analiz edilen maç: {toplam_tahmin}")
+        print(f"   • Basit güç tahmini: %{basit_dogruluk:.1f}")
+        print(f"   • Gelişmiş tahmin: %{dogruluk_yuzdesi:.1f}")
         
-        return dogruluk_yuzdesi
+        # Lig bazlı doğruluk
+        for lig, stats in analiz_detay['lig_bazli'].items():
+            if stats['toplam'] > 0:
+                lig_dogruluk = (stats['dogru'] / stats['toplam']) * 100
+                print(f"   • {lig}: %{lig_dogruluk:.1f} ({stats['dogru']}/{stats['toplam']})")
+        
+        # İyileştirme oranı
+        if basit_dogruluk > 0:
+            iyilesme = dogruluk_yuzdesi - basit_dogruluk
+            print(f"   • İyileştirme: %{iyilesme:+.1f}")
+        
+        return dogruluk_yuzdesi, analiz_detay
     
-    return 0
+    return 0, {}
 
 # ANA PROGRAM
 def main():
@@ -463,9 +553,9 @@ def main():
     print("🎯 Rakip analizi yapılıyor...")
     opponent_stats = calculate_opponent_strength(df, team_stats)
     
-    # Tahmin doğruluğunu analiz et
-    print("📊 Tahmin doğruluğu kontrol ediliyor...")
-    dogruluk = analyze_prediction_accuracy(df, team_stats)
+    # DETAYLI tahmin doğruluğunu analiz et
+    print("📊 Detaylı tahmin doğruluğu analizi...")
+    dogruluk, detay_analiz = analyze_prediction_accuracy_detailed(df, team_stats)
     
     # Tahmin yap
     print("🔮 Önümüzdeki hafta tahmin ediliyor...")
@@ -474,29 +564,38 @@ def main():
     if tahminler:
         print(f"✅ {len(tahminler)} maç tahmin edildi")
         
-        # Telegram raporu oluştur ve gönder
-        telegram_mesaj = create_telegram_prediction_report(tahminler, start_date, end_date)
+        # Telegram raporu oluştur (parçalı)
+        telegram_mesajlar = create_telegram_prediction_report(tahminler, start_date, end_date, dogruluk)
+        
         print("\n" + "="*50)
-        print("TELEGRAM MESAJI:")
+        print("TELEGRAM MESAJLARI:")
         print("="*50)
-        print(telegram_mesaj)
         
-        # Telegram'a gönder
-        success = send_telegram_message(telegram_mesaj)
+        # Tüm mesaj parçalarını gönder
+        success_count = 0
+        for i, mesaj in enumerate(telegram_mesajlar):
+            print(f"\n--- Parça {i+1}/{len(telegram_mesajlar)} ---")
+            print(f"Uzunluk: {len(mesaj)} karakter")
+            print(mesaj)
+            
+            success = send_telegram_message(mesaj)
+            if success:
+                success_count += 1
+            # Mesajlar arasında kısa bekleme
+            import time
+            time.sleep(1)
         
-        if success:
-            print("🎉 Tahminler başarıyla gönderildi!")
+        if success_count == len(telegram_mesajlar):
+            print("🎉 Tüm tahminler başarıyla gönderildi!")
         else:
-            print("❌ Telegram'a gönderilemedi - Secrets kontrol edin")
+            print(f"⚠️  {success_count}/{len(telegram_mesajlar)} mesaj gönderildi")
         
         # Tahminleri kaydet
         tahmin_df = pd.DataFrame(tahminler)
         tahmin_df.to_csv('haftalik_tahminler.csv', index=False, encoding='utf-8')
         print(f"💾 Tahminler 'haftalik_tahminler.csv' dosyasına kaydedildi")
         
-        # Model performansı
-        if dogruluk > 0:
-            print(f"🎯 Model Doğruluk: %{dogruluk:.1f}")
+        print(f"🎯 Model Doğruluk: %{dogruluk:.1f}")
             
     else:
         print("❌ Tahmin yapılabilecek maç bulunamadı")
