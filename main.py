@@ -11,16 +11,26 @@ import os
 
 warnings.filterwarnings('ignore')
 
-# TELEGRAM AYARLARI - BUNLARI DOLDURUN
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", " ") 
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", " ")
+# GitHub Secrets'den al - Eğer yoksa boş string kullan
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 
 # Görselleştirme ayarları
 plt.style.use('default')
 sns.set_palette("husl")
 
-print("🏀 Basketbol Fikstür Analiz ve Tahmin Programı")
-print("=" * 50)
+def log_environment_info():
+    """Çevre değişkenlerini kontrol et"""
+    print("🏀 Basketbol Fikstür Analiz ve Tahmin Programı")
+    print("=" * 50)
+    print(f"📅 Çalışma Zamanı: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+    print(f"🔐 Telegram Bot: {'✅ Ayarlı' if TELEGRAM_BOT_TOKEN else '❌ Ayarlı Değil'}")
+    print(f"💬 Telegram Chat: {'✅ Ayarlı' if TELEGRAM_CHAT_ID else '❌ Ayarlı Değil'}")
+    
+    # Secrets kontrolü
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("⚠️  UYARI: Telegram ayarları bulunamadı!")
+        print("   GitHub Secrets'da TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID ayarlayın")
 
 # Veriyi yükle
 try:
@@ -205,9 +215,10 @@ def enhanced_predict_matches(df, team_stats, lig_performans, opponent_stats):
     """Geliştirilmiş tahmin motoru"""
     gelecek_maclar, start_date, end_date = get_next_week_matches(df)
     
-    if len(gececek_maclar) == 0:
+    # HATA DÜZELTME: gelecek_maclar değişken ismi tutarlı olmalı
+    if len(gelecek_maclar) == 0:
         print("❌ Önümüzdeki hafta için maç bulunamadı")
-        return []
+        return [], start_date, end_date
     
     tahminler = []
     
@@ -307,9 +318,10 @@ def enhanced_predict_matches(df, team_stats, lig_performans, opponent_stats):
     return tahminler, start_date, end_date
 
 def send_telegram_message(message):
-    """Telegram'a mesaj gönder"""
-    if TELEGRAM_BOT_TOKEN == "YOUR_BOT_TOKEN_HERE" or TELEGRAM_CHAT_ID == "YOUR_CHAT_ID_HERE":
-        print("⚠️  Telegram ayarları yapılandırılmamış")
+    """Telegram'a mesaj gönder - GitHub Secrets kullanarak"""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("❌ Telegram ayarları bulunamadı - Mesaj gönderilemedi")
+        print("   GitHub Secrets'da TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID ayarlayın")
         return False
     
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -326,6 +338,7 @@ def send_telegram_message(message):
             return True
         else:
             print(f"❌ Telegram hatası: {response.status_code}")
+            print(f"   Response: {response.text}")
             return False
     except Exception as e:
         print(f"❌ Telegram bağlantı hatası: {e}")
@@ -382,7 +395,7 @@ def analyze_prediction_accuracy(df, team_stats):
     
     if len(completed) < 10:
         print("⚠️  Doğruluk analizi için yeterli maç yok")
-        return
+        return 0
     
     # Son 30 maçı analiz et
     son_maclar = completed.nlargest(30, 'Tarih')
@@ -418,11 +431,20 @@ def analyze_prediction_accuracy(df, team_stats):
             print("⚠️  Tahmin doğruluğu düşük, model ayarları gözden geçirilmeli")
         elif dogruluk_yuzdesi > 65:
             print("✅ Tahmin doğruluğu iyi seviyede")
+        
+        return dogruluk_yuzdesi
     
-    return dogruluk_yuzdesi if toplam_tahmin > 0 else 0
+    return 0
 
 # ANA PROGRAM
 def main():
+    # Çevre bilgilerini logla
+    print("🏀 Basketbol Fikstür Analiz ve Tahmin Programı")
+    print("=" * 50)
+    print(f"📅 Çalışma Zamanı: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+    print(f"🔐 Telegram Bot: {'✅ Ayarlı' if TELEGRAM_BOT_TOKEN else '❌ Ayarlı Değil'}")
+    print(f"💬 Telegram Chat: {'✅ Ayarlı' if TELEGRAM_CHAT_ID else '❌ Ayarlı Değil'}")
+    
     print(f"\n📊 Veri Boyutu: {df.shape}")
     print(f"📅 Tarih Aralığı: {df['Tarih'].min().strftime('%d.%m.%Y')} - {df['Tarih'].max().strftime('%d.%m.%Y')}")
     
@@ -460,12 +482,17 @@ def main():
         print(telegram_mesaj)
         
         # Telegram'a gönder
-        send_telegram_message(telegram_mesaj)
+        success = send_telegram_message(telegram_mesaj)
+        
+        if success:
+            print("🎉 Tahminler başarıyla gönderildi!")
+        else:
+            print("❌ Telegram'a gönderilemedi - Secrets kontrol edin")
         
         # Tahminleri kaydet
         tahmin_df = pd.DataFrame(tahminler)
         tahmin_df.to_csv('haftalik_tahminler.csv', index=False, encoding='utf-8')
-        print(f"\n💾 Tahminler 'haftalik_tahminler.csv' dosyasına kaydedildi")
+        print(f"💾 Tahminler 'haftalik_tahminler.csv' dosyasına kaydedildi")
         
         # Model performansı
         if dogruluk > 0:
@@ -473,6 +500,10 @@ def main():
             
     else:
         print("❌ Tahmin yapılabilecek maç bulunamadı")
+        # Boş da olsa Telegram'a bilgi ver
+        if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+            info_message = f"🏀 Haftalık Basketbol Tahminleri\n\n📅 Önümüzdeki hafta için maç bulunamadı.\n⏰ Tahmin Aralığı: {start_date.strftime('%d.%m %H:%M')} - {end_date.strftime('%d.%m %H:%M')}\n\n⏰ Son kontrol: {datetime.now().strftime('%d.%m.%Y %H:%M')}"
+            send_telegram_message(info_message)
 
 if __name__ == "__main__":
     main()
