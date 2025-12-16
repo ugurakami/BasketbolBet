@@ -119,36 +119,35 @@ Eurolig	21.11.2025	Baskonia Vitoria-Gasteiz	95	73	Bayern Münih	42	41
 Eurolig	21.11.2025	Partizan	87	99	Fenerbahçe Beko	39	56
 Eurolig	21.11.2025	Virtus Bologna	99	89	Maccabi Tel Aviv	56	45
 Eurolig	21.11.2025	Valencia Basket	76	73	Kızılyıldız	49	39
-Eurolig	25.11.2025	BC Dubai			Paris Basketball		
-Eurolig	25.11.2025	Fenerbahçe Beko			Virtus Bologna		
-Eurolig	25.11.2025	Hapoel Tel Aviv			Real Madrid		
-Eurolig	25.11.2025	Zalgiris Kaunas			Baskonia Vitoria-Gasteiz		
-Eurolig	25.11.2025	Panathinaikos Aktor			Partizan		
-Eurolig	25.11.2025	Valencia Basket			Bayern Münih		
-Eurolig	26.11.2025	AS Monaco			Anadolu Efes		
-Eurolig	26.11.2025	Kızılyıldız			Olympiakos		
-Eurolig	26.11.2025	Maccabi Tel Aviv			Olimpia Milano		
-Eurolig	26.11.2025	Barcelona			Asvel Lyon-Villeurbanne		
-Eurolig	04.12.2025	Anadolu Efes			Real Madrid		
-Eurolig	04.12.2025	Zalgiris Kaunas			Maccabi Tel Aviv		
-Eurolig	04.12.2025	AS Monaco			Paris Basketball		
-Eurolig	04.12.2025	Bayern Münih			Partizan		
-Eurolig	04.12.2025	Hapoel Tel Aviv			Asvel Lyon-Villeurbanne		
-Eurolig	04.12.2025	Olympiakos			Fenerbahçe Beko		
-Eurolig	05.12.2025	Kızılyıldız			Barcelona		
-Eurolig	05.12.2025	Panathinaikos Aktor			Valencia Basket		
-Eurolig	5.12.2025	Baskonia Vitoria-Gasteiz			Olimpia Milano		
-Eurolig	5.12.2025	Virtus Bologna			BC Dubai		
-Eurolig	11.12.2025	BC Dubai			Bayern Münih		
-Eurolig	11.12.2025	Maccabi Tel Aviv			Asvel Lyon-Villeurbanne		
-Eurolig	11.12.2025	Olimpia Milano			Panathinaikos Aktor		
-Eurolig	11.12.2025	Valencia Basket			Anadolu Efes		
-Eurolig	11.12.2025	Paris Basketball			Zalgiris Kaunas		
-Eurolig	11.12.2025	Real Madrid			Baskonia Vitoria-Gasteiz		
-Eurolig	12.12.2025	AS Monaco			Fenerbahçe Beko		
-Eurolig	12.12.2025	Barcelona			Olympiakos		
-Eurolig	12.12.2025	Partizan			Kızılyıldız		
-Eurolig	12.12.2025	Virtus Bologna			Hapoel Tel Aviv		
+Eurolig	25.11.2025	BC Dubai	90	89	Paris Basketball	46	45
+Eurolig	25.11.2025	Fenerbahçe Beko	66	64	Virtus Bologna	30	31
+Eurolig	25.11.2025	Hapoel Tel Aviv	74	75	Real Madrid	36	39
+Eurolig	25.11.2025	Zalgiris Kaunas	82	67	Baskonia Vitoria-Gasteiz	37	42
+Eurolig	25.11.2025	Panathinaikos Aktor	91	69	Partizan	48	44
+Eurolig	25.11.2025	Valencia Basket	90	64	Bayern Münih	41	37
+Eurolig	26.11.2025	AS Monaco	102	66	Anadolu Efes	50	43
+Eurolig	26.11.2025	Kızılyıldız	91	80	Olympiakos	37	38
+Eurolig	26.11.2025	Maccabi Tel Aviv	88	102	Olimpia Milano	48	54
+Eurolig	26.11.2025	Barcelona	88	78	Asvel Lyon-Villeurbanne	45	44
+Eurolig	04.12.2025	Anadolu Efes	75	81	Real Madrid	58	46
+Eurolig	04.12.2025	Anadolu Efes	75	81	Real Madrid	41	37
+Eurolig	04.12.2025	Zalgiris Kaunas	65	83	Maccabi Tel Aviv	30	51
+Eurolig	04.12.2025	AS Monaco	125	104	Paris Basketball	58	46
+Eurolig	04.12.2025	Hapoel Tel Aviv	87	80	Asvel Lyon-Villeurbanne	47	41
+Eurolig	04.12.2025	Partizan	92	85	Bayern Münih	36	43
+Eurolig	05.12.2025	Kızılyıldız	79	89	Barcelona	39	46
+Eurolig	5.12.2025	Panathinaikos Aktor	79	89	Valencia Basket	44	38
+Eurolig	5.12.2025	Baskonia Vitoria-Gasteiz	88	78	Olimpia Milano	49	42
+Eurolig	5.12.2025	Virtus Bologna	79	78	BC Dubai	39	44
+Eurolig	11.12.2025	Olimpia Milano	96	89	Panathinaikos Aktor	54	44
+Eurolig	11.12.2025	Valencia Basket	94	82	Anadolu Efes	45	39
+Eurolig	11.12.2025	Paris Basketball	105	108	Zalgiris Kaunas	56	48
+Eurolig	11.12.2025	Real Madrid	94	87	Baskonia Vitoria-Gasteiz	42	39
+Eurolig	12.12.2025	BC Dubai	89	88	Bayern Münih	42	46
+Eurolig	12.12.2025	AS Monaco	86	92	Fenerbahçe Beko	46	38
+Eurolig	12.12.2025	Barcelona	98	85	Olympiakos	42	39
+Eurolig	12.12.2025	Partizan	79	76	Kızılyıldız	35	39
+Eurolig	12.12.2025	Virtus Bologna	74	79	Hapoel Tel Aviv	42	36
 Eurolig	16.12.2025	BC Dubai			Maccabi Tel Aviv		
 Eurolig	16.12.2025	Fenerbahçe Beko			Panathinaikos Aktor		
 Eurolig	16.12.2025	Hapoel Tel Aviv			Kızılyıldız		
@@ -450,23 +449,23 @@ Türkiye	22.11.2025	Türk Telekom	89	82	ONVO Büyükçekmece Basketbol	44	44
 Türkiye	23.11.2025	Aliağa Petkim Spor	73	81	Yukatel Merkezefendi Bld.	36	42
 Türkiye	23.11.2025	Galatasaray MCT Technic	88	76	Esenler Erokspor	43	31
 Türkiye	23.11.2025	Tofaş	86	79	Anadolu Efes	47	47
-Türkiye	23.11.2025	Fenerbahçe Beko			Bursaspor Basketbol		
-Türkiye	05.12.2025	Anadolu Efes			Aliağa Petkim Spor		
-Türkiye	05.12.2025	Bursaspor Basketbol			Galatasaray MCT Technic		
-Türkiye	05.12.2025	Esenler Erokspor			Türk Telekom		
-Türkiye	05.12.2025	Glint Manisa Basket			Bahçeşehir Koleji		
-Türkiye	05.12.2025	Karşıyaka			Beşiktaş Gain		
-Türkiye	05.12.2025	ONVO Büyükçekmece Basketbol			Mersin Spor		
-Türkiye	05.12.2025	Trabzonspor			Tofaş		
-Türkiye	05.12.2025	Yukatel Merkezefendi Bld.			Fenerbahçe Beko		
-Türkiye	12.12.2025	Aliağa Petkim Spor			Trabzonspor		
-Türkiye	12.12.2025	Bahçeşehir Koleji			Beşiktaş Gain		
-Türkiye	12.12.2025	Fenerbahçe Beko			Anadolu Efes		
-Türkiye	12.12.2025	Galatasaray MCT Technic			Yukatel Merkezefendi Bld.		
-Türkiye	12.12.2025	Mersin Spor			Esenler Erokspor		
-Türkiye	12.12.2025	ONVO Büyükçekmece Basketbol			Karşıyaka		
-Türkiye	12.12.2025	Tofaş			Glint Manisa Basket		
-Türkiye	12.12.2025	Türk Telekom			Bursaspor Basketbol		
+Türkiye	23.11.2025	Fenerbahçe Beko	92	84	Bursaspor Basketbol	41	45
+Türkiye	05.12.2025	Trabzonspor	92	87	Tofaş	46	43
+Türkiye	06.12.2025	ONVO Büyükçekmece Basketbol	88	77	Mersin Spor	46	41
+Türkiye	06.12.2025	Glint Manisa Basket	70	77	Bahçeşehir Koleji	45	41
+Türkiye	06.12.2025	Bursaspor Basketbol	91	87	Galatasaray MCT Technic	52	49
+Türkiye	07.12.2025	Yukatel Merkezefendi Bld.	64	87	Fenerbahçe Beko	38	38
+Türkiye	07.12.2025	Karşıyaka	73	86	Beşiktaş Gain	34	44
+Türkiye	07.12.2025	Anadolu Efes	92	96	Aliağa Petkim Spor	42	54
+Türkiye	07.12.2025	Esenler Erokspor	61	67	Türk Telekom	25	28
+Türkiye	12.12.2025	Galatasaray MCT Technic	98	89	Yukatel Merkezefendi Bld.	50	47
+Türkiye	13.12.2025	Türk Telekom	101	74	Bursaspor Basketbol	54	36
+Türkiye	13.12.2025	Tofaş	80	62	Glint Manisa Basket	30	33
+Türkiye	13.12.2025	Bahçeşehir Koleji	88	95	Beşiktaş Gain	36	46
+Türkiye	14.12.2025	Aliağa Petkim Spor	91	105	Trabzonspor	48	50
+Türkiye	14.12.2025	Mersin Spor	83	88	Esenler Erokspor	45	44
+Türkiye	14.12.2025	Fenerbahçe Beko	97	94	Anadolu Efes	47	39
+Türkiye	15.12.2025	ONVO Büyükçekmece Basketbol	83	87	Karşıyaka	44	51
 Türkiye	19.12.2025	Anadolu Efes			Galatasaray MCT Technic		
 Türkiye	19.12.2025	Beşiktaş Gain			Tofaş		
 Türkiye	19.12.2025	Bursaspor Basketbol			Mersin Spor		
@@ -679,27 +678,25 @@ Türkiye	08.05.2026	Yukatel Merkezefendi Bld.			Esenler Erokspor
 İspanya	22.11.2025	CB Breogan	105	78	San Pablo Burgos	57	38
 İspanya	23.11.2025	MoraBanc Andorra	76	83	Joventut Badalona	34	49
 İspanya	23.11.2025	Baskonia Vitoria-Gasteiz	110	92	Bilbao Basket	71	46
-İspanya	23.11.2025	Valencia Basket			Club Basquet Girona	47	31
-İspanya	23.11.2025	Basket Zaragoza			Tenerife		
-İspanya	23.11.2025	Gran Canaria			Barcelona		
-İspanya	06.12.2025	San Pablo Burgos			UCAM Murcia		
-İspanya	06.12.2025	Força Lleida			Unicaja Malaga		
-İspanya	06.12.2025	Granada			Basket Zaragoza		
-İspanya	06.12.2025	Club Basquet Girona			CB Breogan		
-İspanya	07.12.2025	Joventut Badalona			Basquet Manresa		
-İspanya	07.12.2025	Tenerife			Real Madrid		
-İspanya	07.12.2025	Barcelona			MoraBanc Andorra		
-İspanya	07.12.2025	Bilbao Basket			Gran Canaria		
-İspanya	7.12.2025	Baskonia Vitoria-Gasteiz			Valencia Basket		
-İspanya	13.12.2025	UCAM Murcia			Joventut Badalona		
-İspanya	13.12.2025	CB Breogan			Tenerife		
-İspanya	13.12.2025	Gran Canaria			Baskonia Vitoria-Gasteiz		
-İspanya	13.12.2025	MoraBanc Andorra			Granada		
-İspanya	14.12.2025	Bilbao Basket			Força Lleida		
-İspanya	14.12.2025	Unicaja Malaga			San Pablo Burgos		
-İspanya	14.12.2025	Real Madrid			Club Basquet Girona		
-İspanya	14.12.2025	Valencia Basket			Basket Zaragoza		
-İspanya	14.12.2025	Basquet Manresa			Barcelona		
+İspanya	23.11.2025	Valencia Basket	98	72	Club Basquet Girona	47	31
+İspanya	23.11.2025	Basket Zaragoza	76	84	Tenerife	37	44
+İspanya	23.11.2025	Gran Canaria	61	72	Barcelona	29	32
+İspanya	06.12.2025	San Pablo Burgos	88	110	UCAM Murcia	46	58
+İspanya	06.12.2025	Força Lleida	88	89	Unicaja Malaga	37	51
+İspanya	06.12.2025	Granada	83	92	Basket Zaragoza	32	48
+İspanya	06.12.2025	Club Basquet Girona	103	80	CB Breogan	60	30
+İspanya	07.12.2025	Joventut Badalona	83	79	Basquet Manresa	29	39
+İspanya	07.12.2025	Tenerife	70	71	Real Madrid	25	33
+İspanya	07.12.2025	Barcelona	102	71	MoraBanc Andorra	38	30
+İspanya	07.12.2025	Bilbao Basket	79	72	Gran Canaria	34	34
+İspanya	7.12.2025	Baskonia Vitoria-Gasteiz	89	91	Valencia Basket	44	39
+İspanya	13.12.2025	Unicaja Malaga	99	91	San Pablo Burgos	41	43
+İspanya	13.12.2025	CB Breogan	96	108	Tenerife	51	59
+İspanya	13.12.2025	MoraBanc Andorra	86	81	Granada	42	47
+İspanya	14.12.2025	Bilbao Basket	93	75	Força Lleida	32	31
+İspanya	14.12.2025	UCAM Murcia	80	77	Joventut Badalona	32	38
+İspanya	14.12.2025	Real Madrid	112	76	Club Basquet Girona	59	49
+İspanya	14.12.2025	Basquet Manresa	62	89	Barcelona	37	50
 İspanya	20.12.2025	Club Basquet Girona			Tenerife		
 İspanya	20.12.2025	Força Lleida			Real Madrid		
 İspanya	20.12.2025	Gran Canaria			Granada		
@@ -986,15 +983,15 @@ Fransa	22.11.2025	Nancy Basket	76	78	Le Mans	36	46
 Fransa	22.11.2025	Elan Chalon	69	75	Strasbourg IG	38	37
 Fransa	22.11.2025	Saint Quentin	77	68	Cholet Basket	34	26
 Fransa	22.11.2025	Asvel Lyon-Villeurbanne	85	80	JDA Dijon Basket	46	41
-Fransa	23.11.2025	AS Monaco			JL Bourg Basket		
-Fransa	09.12.2025	Gravelines Dunkerque			CSP Limoges		
-Fransa	09.12.2025	Paris Basketball			ESSM Le Portel		
-Fransa	06.12.2025	Cholet Basket			CSP Limoges		
-Fransa	06.12.2025	ESSM Le Portel			Nancy Basket		
-Fransa	06.12.2025	JDA Dijon Basket			AS Monaco		
-Fransa	06.12.2025	JL Bourg Basket			Nanterre 92		
-Fransa	06.12.2025	Le Mans			Elan Chalon		
-Fransa	06.12.2025	Paris Basketball			Saint Quentin		
+Fransa	23.11.2025	AS Monaco	89	91	JL Bourg Basket	52	44
+Fransa	28.10.2025	CSP Limoges	74	79	ESSM Le Portel	39	39
+Fransa	12.12.2025	Nanterre 92	98	88	Le Mans	50	42
+Fransa	13.12.2025	Elan Chalon	90	74	Boulazac Basket	44	27
+Fransa	13.12.2025	Saint Quentin	77	83	JDA Dijon Basket	49	37
+Fransa	13.12.2025	Nancy Basket	97	90	Paris Basketball	47	41
+Fransa	14.12.2025	AS Monaco	88	74	Strasbourg IG	51	37
+Fransa	14.12.2025	Gravelines Dunkerque	75	84	JL Bourg Basket	48	46
+Fransa	14.12.2025	Asvel Lyon-Villeurbanne	85	87	Cholet Basket	47	46
 Fransa	06.12.2025	Strasbourg IG			Asvel Lyon-Villeurbanne		
 Fransa	12.12.2025	Nanterre 92			Le Mans		
 Fransa	13.12.2025	Elan Chalon			Boulazac Basket		
@@ -1159,12 +1156,10 @@ Almanya	26.09.2025	Bayern Münih	93	77	Science City Jena	48	47
 Almanya	27.09.2025	Löwen Braunschweig	75	98	Brose Baskets Bamberg	42	46
 Almanya	27.09.2025	Rasta Vechta	86	76	USC Heidelberg	36	39
 Almanya	27.09.2025	Telekom Baskets Bonn	61	72	s.Oliver Würzburg	24	35
-Almanya	28.09.2025	ALBA Berlin	0 -	0	Riesen Ludwigsburg		
 Almanya	28.09.2025	Gladiators Trier	88	78	Rostock Sewolves	42	30
 Almanya	28.09.2025	Hamburg Towers	85	93	Mitteldeutscher BC	37	40
 Almanya	28.09.2025	Ratiopharm Ulm	94	81	BV Chemnitz 99	42	38
 Almanya	28.9.2025	Ewe Baskets Oldenburg	75	89	Skyliners Frankfurt	44	32
-Almanya	02.10.2025	Brose Baskets Bamberg	0 -	0	Rasta Vechta		
 Almanya	02.10.2025	s.Oliver Würzburg	92	80	Löwen Braunschweig	42	42
 Almanya	02.10.2025	USC Heidelberg	83	87	Science City Jena	49	49
 Almanya	02.10.2025	Ewe Baskets Oldenburg	86	93	Ratiopharm Ulm	52	48
@@ -1172,7 +1167,6 @@ Almanya	02.10.2025	Mitteldeutscher BC	84	77	Telekom Baskets Bonn	44	33
 Almanya	03.10.2025	BV Chemnitz 99	102	78	Hamburg Towers	42	44
 Almanya	03.10.2025	Skyliners Frankfurt	88	98	Riesen Ludwigsburg	39	51
 Almanya	03.10.2025	ALBA Berlin	92	97	Gladiators Trier	52	43
-Almanya	1.12.2025	Rostock Sewolves	v	v	Bayern Münih		
 Almanya	04.10.2025	Ratiopharm Ulm	87	80	Rostock Sewolves	36	33
 Almanya	04.10.2025	Rasta Vechta	83	96	Mitteldeutscher BC	43	45
 Almanya	04.10.2025	Telekom Baskets Bonn	73	71	Ewe Baskets Oldenburg	39	39
@@ -1235,24 +1229,24 @@ Almanya	22.11.2025	Löwen Braunschweig	89	80	Telekom Baskets Bonn	48	43
 Almanya	22.11.2025	Mitteldeutscher BC	85	67	USC Heidelberg	37	41
 Almanya	23.11.2025	Ratiopharm Ulm	77	81	Bayern Münih	36	38
 Almanya	23.11.2025	BV Chemnitz 99	85	89	ALBA Berlin	48	44
-Almanya	05.12.2025	s.Oliver Würzburg			Ewe Baskets Oldenburg		
-Almanya	06.12.2025	Rasta Vechta			Hamburg Towers		
-Almanya	06.12.2025	Science City Jena			Ratiopharm Ulm		
-Almanya	06.12.2025	Riesen Ludwigsburg			Gladiators Trier		
-Almanya	06.12.2025	Telekom Baskets Bonn			BV Chemnitz 99		
-Almanya	07.12.2025	Bayern Münih			Mitteldeutscher BC		
-Almanya	07.12.2025	USC Heidelberg			Löwen Braunschweig		
-Almanya	07.12.2025	ALBA Berlin			Skyliners Frankfurt		
-Almanya	8.12.2025	Brose Baskets Bamberg			Rostock Sewolves		
-Almanya	12.12.2025	BV Chemnitz 99			s.Oliver Würzburg		
-Almanya	13.12.2025	Brose Baskets Bamberg			USC Heidelberg		
-Almanya	13.12.2025	Ratiopharm Ulm			Rasta Vechta		
-Almanya	13.12.2025	Gladiators Trier			Telekom Baskets Bonn		
-Almanya	14.12.2025	Ewe Baskets Oldenburg			Bayern Münih		
-Almanya	14.12.2025	Hamburg Towers			ALBA Berlin		
-Almanya	14.12.2025	Mitteldeutscher BC			Löwen Braunschweig		
-Almanya	14.12.2025	Skyliners Frankfurt			Science City Jena		
-Almanya	15.12.2025	Rostock Sewolves			Riesen Ludwigsburg		
+Almanya	05.12.2025	s.Oliver Würzburg	82	71	Ewe Baskets Oldenburg	39	44
+Almanya	06.12.2025	Science City Jena	70	92	Ratiopharm Ulm	30	42
+Almanya	06.12.2025	Riesen Ludwigsburg	80	86	Gladiators Trier	44	47
+Almanya	06.12.2025	Telekom Baskets Bonn	86	82	BV Chemnitz 99	42	38
+Almanya	07.12.2025	Bayern Münih	83	62	Mitteldeutscher BC	27	30
+Almanya	07.12.2025	Rasta Vechta	97	95	Hamburg Towers	31	34
+Almanya	07.12.2025	USC Heidelberg	95	75	Löwen Braunschweig	47	38
+Almanya	07.12.2025	ALBA Berlin	89	83	Skyliners Frankfurt	43	39
+Almanya	8.12.2025	Brose Baskets Bamberg	74	87	Rostock Sewolves	39	40
+Almanya	12.12.2025	BV Chemnitz 99	67	86	s.Oliver Würzburg	32	42
+Almanya	13.12.2025	Brose Baskets Bamberg	80	69	USC Heidelberg	48	32
+Almanya	13.12.2025	Ratiopharm Ulm	77	75	Rasta Vechta	40	34
+Almanya	13.12.2025	Gladiators Trier	102	98	Telekom Baskets Bonn	45	44
+Almanya	14.12.2025	Ewe Baskets Oldenburg	79	87	Bayern Münih	37	41
+Almanya	14.12.2025	Mitteldeutscher BC	99	93	Löwen Braunschweig	52	44
+Almanya	14.12.2025	Skyliners Frankfurt	79	70	Science City Jena	37	34
+Almanya	14.12.2025	Hamburg Towers	99	80	ALBA Berlin	49	38
+Almanya	15.12.2025	Rostock Sewolves	96	89	Riesen Ludwigsburg	34	43
 Almanya	10.12.2025	Telekom Baskets Bonn			Skyliners Frankfurt		
 Almanya	20.12.2025	ALBA Berlin			Ratiopharm Ulm		
 Almanya	20.12.2025	Science City Jena			Brose Baskets Bamberg		
@@ -1541,22 +1535,22 @@ Almanya	10.5.2026	USC Heidelberg			Rasta Vechta
 İtalya	23.11.2025	Derthona Basket	90	98	Reyer Venezia	47	52
 İtalya	23.11.2025	Cantu	77	89	Virtus Bologna	35	47
 İtalya	23.11.2025	Napoli Basket	86	75	Sassari	48	39
-İtalya	07.12.2025	AP Udinese			Napoli Basket		
-İtalya	07.12.2025	Cremona			Varese		
-İtalya	07.12.2025	Olimpia Milano			Trento		
-İtalya	07.12.2025	Reggio Emilia			Brescia Leonessa		
-İtalya	07.12.2025	Reyer Venezia			Cantu		
-İtalya	07.12.2025	Sassari			Trieste		
-İtalya	07.12.2025	Treviso			P. Trapani		
-İtalya	07.12.2025	Virtus Bologna			Derthona Basket		
-İtalya	14.12.2025	Brescia Leonessa			Varese		
-İtalya	14.12.2025	Derthona Basket			Sassari		
-İtalya	14.12.2025	Napoli Basket			Cremona		
-İtalya	14.12.2025	Olimpia Milano			Virtus Bologna		
-İtalya	14.12.2025	P. Trapani			AP Udinese		
-İtalya	14.12.2025	Trento			Reyer Venezia		
-İtalya	14.12.2025	Treviso			Cantu		
-İtalya	14.12.2025	Trieste			Reggio Emilia		
+İtalya	06.12.2025	Sassari	85	80	Trieste	44	37
+İtalya	06.12.2025	Reggio Emilia	87	93	Brescia Leonessa	46	51
+İtalya	07.12.2025	AP Udinese	78	71	Napoli Basket	41	39
+İtalya	07.12.2025	Reyer Venezia	101	95	Cantu	61	51
+İtalya	07.12.2025	Olimpia Milano	94	90	Trento	52	48
+İtalya	07.12.2025	Treviso	82	89	P. Trapani	39	47
+İtalya	08.12.2025	Cremona	79	87	Varese	39	39
+İtalya	08.12.2025	Virtus Bologna	92	77	Derthona Basket	48	35
+İtalya	13.12.2025	Trieste	92	82	Reggio Emilia	37	43
+İtalya	13.12.2025	Trento	96	90	Reyer Venezia	37	50
+İtalya	14.12.2025	P. Trapani	91	73	AP Udinese	46	33
+İtalya	14.12.2025	Derthona Basket	118	113	Sassari	47	32
+İtalya	14.12.2025	Brescia Leonessa	102	94	Varese	50	47
+İtalya	14.12.2025	Napoli Basket	102	76	Cremona	54	35
+İtalya	14.12.2025	Treviso	86	81	Cantu	45	41
+İtalya	14.12.2025	Olimpia Milano	74	66	Virtus Bologna	35	35
 İtalya	21.12.2025	AP Udinese			Treviso		
 İtalya	21.12.2025	Cantu			Olimpia Milano		
 İtalya	21.12.2025	Cremona			Derthona Basket		
@@ -1737,14 +1731,11 @@ NBA	25.10.2025	Los Angeles Lakers	128	110	Minnesota Timberwolves	68	63
 NBA	25.10.2025	Portland Trail Blazers	139	119	Golden State Warriors	69	56
 NBA	25.10.2025	Sacramento Kings	105	104	Utah Jazz	49	46
 NBA	25.10.2025	Los Angeles Clippers	129	102	Phoenix Suns	72	56
-NBA	26.102.025	Orlando Magic	98	110	Chicago Bulls	49	52
 NBA	26.10.2025	Atlanta Hawks	100	117	Oklahoma City Thunder	55	60
 NBA	26.10.2025	Philadelphia 76ers	125	121	Charlotte Hornets	61	58
 NBA	26.10.2025	Denver Nuggets	133	111	Phoenix Suns	71	54
 NBA	26.10.2025	Memphis Grizzlies	128	103	Indiana Pacers	60	52
 NBA	26.10.2025	Orlando Magic	98	110	Chicago Bulls	49	52
-NBA	26.10.2025	Atlanta Hawks	100	117	Oklahoma City Thunder	55	60
-NBA	26.10.2025	Philadelphia 76ers	125	121	Charlotte Hornets	61	58
 NBA	26.10.2025	Denver Nuggets	133	111	Phoenix Suns	71	54
 NBA	26.10.2025	Memphis Grizzlies	128	103	Indiana Pacers	60	52
 NBA	26.10.2025	San Antonio Spurs	118	107	Brooklyn Nets	69	48
@@ -1961,113 +1952,130 @@ NBA	24.11.2025	Toronto Raptors	119	109	Brooklyn Nets	65	58
 NBA	24.11.2025	Oklahoma City Thunder	122	95	Portland Trail Blazers	67	46
 NBA	24.11.2025	Phoenix Suns	111	102	San Antonio Spurs	49	56
 NBA	24.11.2025	Utah Jazz	106	108	Los Angeles Lakers	55	62
-NBA	25.11.2025	Indiana Pacers			Detroit Pistons		
-NBA	25.11.2025	Toronto Raptors			Cleveland Cavaliers		
-NBA	25.11.2025	Brooklyn Nets			New York Knicks		
-NBA	25.11.2025	Miami Heat			Dallas Mavericks		
-NBA	25.11.2025	Memphis Grizzlies			Denver Nuggets		
-NBA	25.11.2025	Milwaukee Bucks			Portland Trail Blazers		
-NBA	25.11.2025	New Orleans Pelicans			Chicago Bulls		
-NBA	25.11.2025	Phoenix Suns			Houston Rockets		
-NBA	25.11.2025	Golden State Warriors			Utah Jazz		
-NBA	25.11.2025	Sacramento Kings			Minnesota Timberwolves		
-NBA	26.11.2025	Washington Wizards			Atlanta Hawks		
-NBA	26.11.2025	Philadelphia 76ers			Orlando Magic		
-NBA	26.11.2025	Los Angeles Lakers			Los Angeles Clippers		
-NBA	27.11.2025	Boston Celtics			Detroit Pistons		
-NBA	27.11.2025	Charlotte Hornets			New York Knicks		
-NBA	27.11.2025	Miami Heat			Milwaukee Bucks		
-NBA	27.11.2025	Oklahoma City Thunder			Minnesota Timberwolves		
-NBA	27.11.2025	Toronto Raptors			Indiana Pacers		
-NBA	27.11.2025	New Orleans Pelicans			Memphis Grizzlies		
-NBA	27.11.2025	Golden State Warriors			Houston Rockets		
-NBA	27.11.2025	Portland Trail Blazers			San Antonio Spurs		
-NBA	27.11.2025	Sacramento Kings			Phoenix Suns		
-NBA	29.11.2025	Atlanta Hawks			Cleveland Cavaliers		
-NBA	29.11.2025	Brooklyn Nets			Philadelphia 76ers		
-NBA	29.11.2025	Charlotte Hornets			Chicago Bulls		
-NBA	29.11.2025	Detroit Pistons			Orlando Magic		
-NBA	29.11.2025	Indiana Pacers			Washington Wizards		
-NBA	29.11.2025	New York Knicks			Milwaukee Bucks		
-NBA	29.11.2025	Denver Nuggets			San Antonio Spurs		
-NBA	29.11.2025	Oklahoma City Thunder			Phoenix Suns		
-NBA	29.11.2025	Utah Jazz			Sacramento Kings		
-NBA	29.11.2025	Los Angeles Clippers			Memphis Grizzlies		
-NBA	29.11.2025	Los Angeles Lakers			Dallas Mavericks		
-NBA	30.11.2025	Minnesota Timberwolves			Boston Celtics		
-NBA	30.11.2025	Charlotte Hornets			Toronto Raptors		
-NBA	30.11.2025	Indiana Pacers			Chicago Bulls		
-NBA	30.11.2025	Miami Heat			Detroit Pistons		
-NBA	30.11.2025	Milwaukee Bucks			Brooklyn Nets		
-NBA	30.11.2025	Golden State Warriors			New Orleans Pelicans		
-NBA	30.11.2025	Phoenix Suns			Denver Nuggets		
-NBA	30.11.2025	Los Angeles Clippers			Dallas Mavericks		
-NBA	30.11.2025	Utah Jazz			Houston Rockets		
-NBA	01.12.2025	Cleveland Cavaliers			Boston Celtics		
-NBA	01.12.2025	New York Knicks			Toronto Raptors		
-NBA	01.12.2025	Philadelphia 76ers			Atlanta Hawks		
-NBA	01.12.2025	Portland Trail Blazers			Oklahoma City Thunder		
-NBA	01.12.2025	Minnesota Timberwolves			San Antonio Spurs		
-NBA	01.12.2025	Sacramento Kings			Memphis Grizzlies		
-NBA	01.12.2025	Los Angeles Lakers			New Orleans Pelicans		
-NBA	02.12.2025	Detroit Pistons			Atlanta Hawks		
-NBA	02.12.2025	Indiana Pacers			Cleveland Cavaliers		
-NBA	02.12.2025	Washington Wizards			Milwaukee Bucks		
-NBA	02.12.2025	Brooklyn Nets			Charlotte Hornets		
-NBA	02.12.2025	Miami Heat			Los Angeles Clippers		
-NBA	02.12.2025	Orlando Magic			Chicago Bulls		
-NBA	02.12.2025	Denver Nuggets			Dallas Mavericks		
-NBA	02.12.2025	Utah Jazz			Houston Rockets		
-NBA	02.12.2025	Los Angeles Lakers			Phoenix Suns		
-NBA	03.12.2025	Philadelphia 76ers			Washington Wizards		
-NBA	03.12.2025	Toronto Raptors			Portland Trail Blazers		
-NBA	03.12.2025	Boston Celtics			New York Knicks		
-NBA	03.12.2025	New Orleans Pelicans			Minnesota Timberwolves		
-NBA	03.12.2025	San Antonio Spurs			Memphis Grizzlies		
-NBA	03.12.2025	Golden State Warriors			Oklahoma City Thunder		
-NBA	04.12.2025	Cleveland Cavaliers			Portland Trail Blazers		
-NBA	04.12.2025	Indiana Pacers			Denver Nuggets		
-NBA	04.12.2025	Orlando Magic			San Antonio Spurs		
-NBA	04.12.2025	Atlanta Hawks			Los Angeles Clippers		
-NBA	04.12.2025	New York Knicks			Charlotte Hornets		
-NBA	04.12.2025	Chicago Bulls			Brooklyn Nets		
-NBA	04.12.2025	Houston Rockets			Sacramento Kings		
-NBA	04.12.2025	Milwaukee Bucks			Detroit Pistons		
-NBA	04.12.2025	Dallas Mavericks			Miami Heat		
-NBA	05.12.2025	Philadelphia 76ers			Golden State Warriors		
-NBA	05.12.2025	Washington Wizards			Boston Celtics		
-NBA	05.12.2025	Brooklyn Nets			Utah Jazz		
-NBA	05.12.2025	Toronto Raptors			Los Angeles Lakers		
-NBA	05.12.2025	New Orleans Pelicans			Minnesota Timberwolves		
-NBA	06.12.2025	Boston Celtics			Los Angeles Lakers		
-NBA	06.12.2025	Orlando Magic			Miami Heat		
-NBA	06.12.2025	Atlanta Hawks			Denver Nuggets		
-NBA	06.12.2025	Cleveland Cavaliers			San Antonio Spurs		
-NBA	06.12.2025	Detroit Pistons			Portland Trail Blazers		
-NBA	06.12.2025	New York Knicks			Utah Jazz		
-NBA	06.12.2025	Toronto Raptors			Charlotte Hornets		
-NBA	06.12.2025	Chicago Bulls			Indiana Pacers		
-NBA	06.12.2025	Houston Rockets			Phoenix Suns		
-NBA	06.12.2025	Memphis Grizzlies			Los Angeles Clippers		
-NBA	06.12.2025	Milwaukee Bucks			Philadelphia 76ers		
-NBA	06.12.2025	Oklahoma City Thunder			Dallas Mavericks		
-NBA	07.12.2025	Brooklyn Nets			New Orleans Pelicans		
-NBA	07.12.2025	Washington Wizards			Atlanta Hawks		
-NBA	07.12.2025	Cleveland Cavaliers			Golden State Warriors		
-NBA	07.12.2025	Detroit Pistons			Milwaukee Bucks		
-NBA	07.12.2025	Miami Heat			Sacramento Kings		
-NBA	07.12.2025	Minnesota Timberwolves			Los Angeles Clippers		
-NBA	07.12.2025	Dallas Mavericks			Houston Rockets		
-NBA	07.12.2025	New York Knicks			Orlando Magic		
-NBA	07.12.2025	Toronto Raptors			Boston Celtics		
-NBA	08.12.2025	Charlotte Hornets			Denver Nuggets		
-NBA	08.12.2025	Memphis Grizzlies			Portland Trail Blazers		
-NBA	08.12.2025	Chicago Bulls			Golden State Warriors		
-NBA	08.12.2025	Philadelphia 76ers			Los Angeles Lakers		
-NBA	08.12.2025	Utah Jazz			Oklahoma City Thunder		
-NBA	09.12.2025	Indiana Pacers			Sacramento Kings		
-NBA	09.12.2025	Minnesota Timberwolves			Phoenix Suns		
-NBA	09.12.2025	New Orleans Pelicans			San Antonio Spurs		
+NBA	25.11.2025	Indiana Pacers	117	122	Detroit Pistons	55	71
+NBA	25.11.2025	Toronto Raptors	110	99	Cleveland Cavaliers	57	44
+NBA	25.11.2025	Brooklyn Nets	100	113	New York Knicks	48	51
+NBA	25.11.2025	Miami Heat	106	102	Dallas Mavericks	52	44
+NBA	25.11.2025	Memphis Grizzlies	115	125	Denver Nuggets	54	62
+NBA	25.11.2025	Milwaukee Bucks	103	115	Portland Trail Blazers	53	65
+NBA	25.11.2025	New Orleans Pelicans	143	130	Chicago Bulls	74	58
+NBA	25.11.2025	Phoenix Suns	92	114	Houston Rockets	50	59
+NBA	25.11.2025	Golden State Warriors	134	117	Utah Jazz	67	55
+NBA	25.11.2025	Sacramento Kings	117	112	Minnesota Timberwolves	46	54
+NBA	26.11.2025	Washington Wizards	132	113	Atlanta Hawks	77	55
+NBA	26.11.2025	Philadelphia 76ers	103	144	Orlando Magic	60	86
+NBA	26.11.2025	Los Angeles Lakers	165	118	Los Angeles Clippers	69	66
+NBA	27.11.2025	Boston Celtics	117	114	Detroit Pistons	57	58
+NBA	27.11.2025	Charlotte Hornets	101	129	New York Knicks	47	72
+NBA	27.11.2025	Miami Heat	106	103	Milwaukee Bucks	53	47
+NBA	27.11.2025	Oklahoma City Thunder	113	105	Minnesota Timberwolves	49	39
+NBA	27.11.2025	Toronto Raptors	97	95	Indiana Pacers	50	49
+NBA	27.11.2025	New Orleans Pelicans	128	133	Memphis Grizzlies	68	53
+NBA	27.11.2025	Golden State Warriors	100	104	Houston Rockets	59	47
+NBA	27.11.2025	Portland Trail Blazers	102	115	San Antonio Spurs	54	56
+NBA	27.11.2025	Sacramento Kings	100	112	Phoenix Suns	45	67
+NBA	29.11.2025	Atlanta Hawks	130	123	Cleveland Cavaliers	60	62
+NBA	29.11.2025	Brooklyn Nets	103	115	Philadelphia 76ers	48	63
+NBA	29.11.2025	Charlotte Hornets	123	116	Chicago Bulls	67	62
+NBA	29.11.2025	Detroit Pistons	109	112	Orlando Magic	58	59
+NBA	29.11.2025	Indiana Pacers	119	86	Washington Wizards	64	52
+NBA	29.11.2025	New York Knicks	118	109	Milwaukee Bucks	61	62
+NBA	29.11.2025	Denver Nuggets	136	139	San Antonio Spurs	74	59
+NBA	29.11.2025	Oklahoma City Thunder	123	119	Phoenix Suns	56	52
+NBA	29.11.2025	Utah Jazz	128	119	Sacramento Kings	62	51
+NBA	29.11.2025	Los Angeles Clippers	107	112	Memphis Grizzlies	63	50
+NBA	29.11.2025	Los Angeles Lakers	129	119	Dallas Mavericks	60	62
+NBA	30.11.2025	Minnesota Timberwolves	119	115	Boston Celtics	59	69
+NBA	30.11.2025	Charlotte Hornets	118	111	Toronto Raptors	52	58
+NBA	30.11.2025	Indiana Pacers	103	101	Chicago Bulls	61	54
+NBA	30.11.2025	Miami Heat	135	138	Detroit Pistons	59	71
+NBA	30.11.2025	Milwaukee Bucks	116	99	Brooklyn Nets	71	53
+NBA	30.11.2025	Golden State Warriors	104	96	New Orleans Pelicans	42	38
+NBA	30.11.2025	Phoenix Suns	112	130	Denver Nuggets	60	63
+NBA	30.11.2025	Los Angeles Clippers	110	114	Dallas Mavericks	56	49
+NBA	30.11.2025	Utah Jazz	101	129	Houston Rockets	48	67
+NBA	01.12.2025	Cleveland Cavaliers	115	117	Boston Celtics	51	58
+NBA	01.12.2025	New York Knicks	116	94	Toronto Raptors	59	52
+NBA	01.12.2025	Philadelphia 76ers	134	142	Atlanta Hawks	58	57
+NBA	01.12.2025	Portland Trail Blazers	115	123	Oklahoma City Thunder	55	54
+NBA	01.12.2025	Minnesota Timberwolves	125	112	San Antonio Spurs	61	62
+NBA	01.12.2025	Sacramento Kings	107	115	Memphis Grizzlies	59	62
+NBA	01.12.2025	Los Angeles Lakers	133	121	New Orleans Pelicans	77	57
+NBA	02.12.2025	Detroit Pistons	99	98	Atlanta Hawks	50	49
+NBA	02.12.2025	Indiana Pacers	119	135	Cleveland Cavaliers	54	66
+NBA	02.12.2025	Washington Wizards	129	126	Milwaukee Bucks	58	66
+NBA	02.12.2025	Brooklyn Nets	116	103	Charlotte Hornets	59	59
+NBA	02.12.2025	Miami Heat	140	123	Los Angeles Clippers	76	56
+NBA	02.12.2025	Orlando Magic	125	120	Chicago Bulls	53	53
+NBA	02.12.2025	Denver Nuggets	121	131	Dallas Mavericks	68	69
+NBA	02.12.2025	Utah Jazz	133	125	Houston Rockets	68	57
+NBA	02.12.2025	Los Angeles Lakers	108	125	Phoenix Suns	52	66
+NBA	03.12.2025	Philadelphia 76ers	121	102	Washington Wizards	66	54
+NBA	03.12.2025	Toronto Raptors	121	118	Portland Trail Blazers	65	59
+NBA	03.12.2025	Boston Celtics	123	117	New York Knicks	58	52
+NBA	03.12.2025	New Orleans Pelicans	142	149	Minnesota Timberwolves	68	58
+NBA	03.12.2025	San Antonio Spurs	126	119	Memphis Grizzlies	63	59
+NBA	03.12.2025	Golden State Warriors	112	124	Oklahoma City Thunder	44	63
+NBA	04.12.2025	Cleveland Cavaliers	110	122	Portland Trail Blazers	58	68
+NBA	04.12.2025	Indiana Pacers	120	135	Denver Nuggets	48	72
+NBA	04.12.2025	Orlando Magic	112	114	San Antonio Spurs	49	58
+NBA	04.12.2025	Atlanta Hawks	92	115	Los Angeles Clippers	41	55
+NBA	04.12.2025	New York Knicks	119	104	Charlotte Hornets	53	47
+NBA	04.12.2025	Chicago Bulls	103	113	Brooklyn Nets	44	54
+NBA	04.12.2025	Houston Rockets	121	95	Sacramento Kings	51	52
+NBA	04.12.2025	Milwaukee Bucks	113	109	Detroit Pistons	49	52
+NBA	04.12.2025	Dallas Mavericks	118	108	Miami Heat	64	54
+NBA	05.12.2025	Philadelphia 76ers	99	98	Golden State Warriors	56	34
+NBA	05.12.2025	Washington Wizards	101	146	Boston Celtics	59	66
+NBA	05.12.2025	Brooklyn Nets	110	123	Utah Jazz	58	49
+NBA	05.12.2025	Toronto Raptors	120	123	Los Angeles Lakers	58	67
+NBA	05.12.2025	New Orleans Pelicans	116	125	Minnesota Timberwolves	62	62
+NBA	06.12.2025	Boston Celtics	126	105	Los Angeles Lakers	69	46
+NBA	06.12.2025	Orlando Magic	106	105	Miami Heat	57	60
+NBA	06.12.2025	Atlanta Hawks	133	134	Denver Nuggets	73	54
+NBA	06.12.2025	Cleveland Cavaliers	130	117	San Antonio Spurs	64	72
+NBA	06.12.2025	Detroit Pistons	122	116	Portland Trail Blazers	65	58
+NBA	06.12.2025	New York Knicks	146	112	Utah Jazz	68	47
+NBA	06.12.2025	Toronto Raptors	86	111	Charlotte Hornets	42	53
+NBA	06.12.2025	Chicago Bulls	105	120	Indiana Pacers	57	62
+NBA	06.12.2025	Houston Rockets	117	98	Phoenix Suns	68	58
+NBA	06.12.2025	Memphis Grizzlies	107	98	Los Angeles Clippers	54	58
+NBA	06.12.2025	Milwaukee Bucks	101	116	Philadelphia 76ers	49	69
+NBA	06.12.2025	Oklahoma City Thunder	132	111	Dallas Mavericks	63	48
+NBA	07.12.2025	Brooklyn Nets	119	101	New Orleans Pelicans	62	44
+NBA	07.12.2025	Washington Wizards	116	131	Atlanta Hawks	55	70
+NBA	07.12.2025	Cleveland Cavaliers	94	99	Golden State Warriors	36	45
+NBA	07.12.2025	Detroit Pistons	124	112	Milwaukee Bucks	61	56
+NBA	07.12.2025	Miami Heat	111	127	Sacramento Kings	55	72
+NBA	07.12.2025	Minnesota Timberwolves	109	106	Los Angeles Clippers	42	56
+NBA	07.12.2025	Dallas Mavericks	122	109	Houston Rockets	57	57
+NBA	07.12.2025	New York Knicks	106	100	Orlando Magic	54	55
+NBA	07.12.2025	Toronto Raptors	113	121	Boston Celtics	59	77
+NBA	08.12.2025	Charlotte Hornets	106	115	Denver Nuggets	58	57
+NBA	08.12.2025	Memphis Grizzlies	119	96	Portland Trail Blazers	66	46
+NBA	08.12.2025	Chicago Bulls	91	123	Golden State Warriors	46	60
+NBA	08.12.2025	Philadelphia 76ers	108	112	Los Angeles Lakers	60	53
+NBA	08.12.2025	Utah Jazz	101	131	Oklahoma City Thunder	48	74
+NBA	09.12.2025	Indiana Pacers	116	105	Sacramento Kings	66	51
+NBA	09.12.2025	Minnesota Timberwolves	105	108	Phoenix Suns	57	61
+NBA	09.12.2025	New Orleans Pelicans	132	135	San Antonio Spurs	57	77
+NBA	10.12.2025	Orlando Magic	117	108	Miami Heat	56	57
+NBA	10.12.2025	Toronto Raptors	101	117	New York Knicks	52	69
+NBA	11.12.2025	Oklahoma City Thunder	138	89	Phoenix Suns	74	48
+NBA	11.12.2025	Los Angeles Lakers	119	132	San Antonio Spurs	58	70
+NBA	12.12.2025	Houston Rockets	115	113	Los Angeles Clippers	51	54
+NBA	12.12.2025	Milwaukee Bucks	116	101	Boston Celtics	60	67
+NBA	12.12.2025	New Orleans Pelicans	143	120	Portland Trail Blazers	70	68
+NBA	12.12.2025	Sacramento Kings	105	136	Denver Nuggets	54	77
+NBA	13.12.2025	Charlotte Hornets	126	129	Chicago Bulls	61	55
+NBA	13.12.2025	Detroit Pistons	142	115	Atlanta Hawks	69	60
+NBA	13.12.2025	Philadelphia 76ers	115	105	Indiana Pacers	63	58
+NBA	13.12.2025	Washington Wizards	126	130	Cleveland Cavaliers	60	62
+NBA	13.12.2025	Memphis Grizzlies	126	130	Utah Jazz	64	61
+NBA	13.12.2025	Dallas Mavericks	119	111	Brooklyn Nets	65	61
+NBA	13.12.2025	Golden State Warriors	120	127	Minnesota Timberwolves	63	61
+NBA	14.12.2025	Orlando Magic	120	132	New York Knicks	64	71
+NBA	14.12.2025	Oklahoma City Thunder	109	111	San Antonio Spurs	49	46
 NBA	18.12.2025	Chicago Bulls			Cleveland Cavaliers		
 NBA	18.12.2025	Minnesota Timberwolves			Memphis Grizzlies		
 NBA	18.12.2025	Oklahoma City Thunder			Los Angeles Clippers		
@@ -2458,3 +2466,6 @@ NBA	07.02.2026	Portland Trail Blazers			Memphis Grizzlies
 NBA	07.02.2026	Sacramento Kings			Los Angeles Clippers		
 NBA	07.02.2026	Brooklyn Nets			Washington Wizards		
 NBA	07.02.2026	Oklahoma City Thunder			Houston Rockets		
+NBA	07.02.2026	Sacramento Kings			116-111	EV HAFİF ÜSTÜN	0,7
+NBA	07.02.2026	Brooklyn Nets			119-107	EV GÜÇLÜ ÜSTÜN	0,94
+NBA	07.02.2026	Oklahoma City Thunder			119-105	EV GÜÇLÜ ÜSTÜN	0,95
